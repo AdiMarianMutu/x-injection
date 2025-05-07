@@ -6,4 +6,4 @@ import type { IProviderModule } from '../types';
 export const GLOBAL_APP_MODULE_ID = 'GlobalAppModule';
 
 /** The default {@link IProviderModule.identifier}. */
-export const ANONYMOUSE_MODULE_DEFAULT_ID = 'AnonymousModule';
+export const ANONYMOUS_MODULE_DEFAULT_ID = 'AnonymousModule';

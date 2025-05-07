@@ -1,7 +1,7 @@
 import { Container } from 'inversify';
 
 import {
-  ANONYMOUSE_MODULE_DEFAULT_ID,
+  ANONYMOUS_MODULE_DEFAULT_ID,
   GlobalAppModule,
   InjectionScope,
   ProviderModule,
@@ -366,7 +366,7 @@ describe('ProviderModule', () => {
   it('should be anonymous (no `name` set)', () => {
     const AnonymousModule = new ProviderModule({}).toNaked();
 
-    expect(AnonymousModule.toString()).toContain(ANONYMOUSE_MODULE_DEFAULT_ID);
+    expect(AnonymousModule.toString()).toContain(ANONYMOUS_MODULE_DEFAULT_ID);
   });
 
   it('should correctly initialize with custom `Container`', () => {

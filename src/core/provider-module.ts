@@ -28,7 +28,7 @@ import type {
   StaticExports,
 } from '../types';
 import { ProviderModuleUtils } from '../utils';
-import { ANONYMOUSE_MODULE_DEFAULT_ID } from './constants';
+import { ANONYMOUS_MODULE_DEFAULT_ID } from './constants';
 import { GlobalContainer } from './global-container';
 
 /**
@@ -104,7 +104,7 @@ export class ProviderModule implements IProviderModule {
   private readonly registeredBindingSideEffects!: RegisteredBindingSideEffects;
 
   constructor({
-    identifier = Symbol(ANONYMOUSE_MODULE_DEFAULT_ID),
+    identifier = Symbol(ANONYMOUS_MODULE_DEFAULT_ID),
     imports,
     providers,
     exports,

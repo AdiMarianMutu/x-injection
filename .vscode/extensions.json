@@ -1,0 +1,14 @@
+{
+  "recommendations": [
+    "yoavbls.pretty-ts-errors",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "firsttris.vscode-jest-runner",
+    "eamodio.gitlens",
+    "dsznajder.es7-react-js-snippets",
+    "pkief.material-icon-theme",
+    "mhutchie.git-graph",
+    "yzhang.markdown-all-in-one",
+    "wix.vscode-import-cost"
+  ]
+}

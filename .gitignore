@@ -1,0 +1,32 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependency directory
+node_modules
+
+# Optional npm cache directory
+.npm
+
+# History of installed package
+*.lock
+
+build/
+.DS_Store
+.nvmrc # this breaks circleci builds
+.idea/
+.env
+.nvmrc
+
+# coverage
+artifacts/
+.nyc_output
+
+# Ignore test-related files
+/coverage.data
+/coverage/
+
+# Build files
+/dist
+/docs

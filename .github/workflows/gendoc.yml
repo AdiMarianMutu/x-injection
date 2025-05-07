@@ -1,0 +1,36 @@
+name: Generate Doc
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to generate Doc for'
+        required: true
+        default: 'main'
+  push:
+    tags:
+      - 'v*' # Triggers on any tag starting with 'v', e.g., v1.0.0
+
+jobs:
+  gen-doc:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate TypeDoc
+        run: npm run docs:build
+
+      - name: Ensure .nojekyll is present
+        run: touch ./docs/.nojekyll
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs

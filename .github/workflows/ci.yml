@@ -1,0 +1,35 @@
+# Enforce your MR | commit must follow best-practices: lint -> build -> test
+name: Verify-Commit
+run-name: Verify PR merge to ${{ github.base_ref }} by @${{ github.actor }}
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+    pull_request:
+        branches:
+            - main
+            - 'releases/**'
+    push:
+        branches:
+            - main
+            - 'releases/**'
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+    # This workflow contains a single job called "verify"
+    verify:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            # Setup .npmrc file to publish to npm
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 18
+            - name: Install dependencies
+              run: npm ci
+            - name: Verify Lint
+              run: npm run lint
+            - name: Build package
+              run: npm run build
+            - name: Verify Unit test
+              run: npm run test

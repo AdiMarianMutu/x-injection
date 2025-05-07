@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# Fix lint with prettier
+npm run lint:fix
+# Verify lint again with eslint
+npm run lint

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "plugin": ["typedoc-theme-hierarchy"],
+  "theme": "hierarchy",
+  "tsconfig": "../tsconfig.json",
+  "name": "xInjection",
+  "entryPoints": ["../src/.docs-entry.ts"],
+  "entryPointStrategy": "expand",
+  "out": "../docs",
+  "exclude": ["**/*.test.ts"],
+  "excludeReferences": true,
+  "includeVersion": true,
+  "headings": {
+    "readme": false
+  }
+}

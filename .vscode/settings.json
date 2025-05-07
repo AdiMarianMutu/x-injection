@@ -1,0 +1,30 @@
+{
+  "git.autorefresh": true,
+  "explorer.confirmDelete": true,
+  "explorer.autoReveal": false,
+  "files.enableTrash": true,
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/*/**": true,
+    "**/dist/*/**": true
+  },
+  "files.exclude": {
+    "**/.git": false
+  },
+  "workbench.editor.closeOnFileDelete": false,
+  "workbench.editor.labelFormat": "short",
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "prettier.configPath": "./config/.prettierrc.cjs",
+  "eslint.options": { "overrideConfigFile": "./config/.eslintrc.cjs" },
+  "editor.formatOnSave": true,
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "typescript.updateImportsOnFileMove.enabled": "prompt",
+  "javascript.updateImportsOnFileMove.enabled": "prompt",
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore"
+}

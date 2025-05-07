@@ -210,6 +210,8 @@ export class ProviderModule implements IProviderModule {
           // another ProviderModule, therefore we must recursively drill into it
           // to import its exported modules/providers.
           this.injectImportedModules([exportableModule]);
+
+          return;
         }
 
         const exportableProvider = exportable as ProviderOptions<unknown> & ProviderScopeOption;

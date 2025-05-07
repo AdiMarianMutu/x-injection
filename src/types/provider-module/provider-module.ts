@@ -10,16 +10,16 @@ export interface IProviderModule {
   /**
    * Can be used to retrieve a resolved `dependency` from the module container.
    *
-   * @param providerOrIdentifier Either the {@link ProviderToken} or the {@link ProviderIdentifier}.
+   * @param provider The {@link ProviderToken}.
    * @param isOptional When set to `false` _(default)_ an exception will be thrown when the {@link provider} isn't bound.
    * @returns Either the {@link T | dependency} or `undefined` if {@link isOptional} is set to `true`.
    */
-  get<T>(providerOrIdentifier: ProviderToken<T>, isOptional?: boolean): T;
+  get<T>(provider: ProviderToken<T>, isOptional?: boolean): T;
 
   /**
    * Can be used to retrieve many resolved `dependencies` from the module container at once.
    *
-   * @param deps Either one or more {@link ProviderToken} or {@link ProviderIdentifier}.
+   * @param deps Either one or more {@link ProviderToken}.
    * @returns Tuple containing the {@link D | dependencies}.
    *
    * @example

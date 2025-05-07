@@ -15,19 +15,19 @@ import { isPlainObject } from './is-plain-object';
 import { bindingScopeToInjectionScope } from './scope-converter';
 
 export namespace ProviderTokenHelpers {
-  export function isSelfToken<T>(provider: ProviderToken): provider is ProviderSelfToken<T> {
+  export function isSelfToken<T>(provider: ProviderToken<T>): provider is ProviderSelfToken<T> {
     return typeof provider === 'function';
   }
 
-  export function isClassToken<T>(provider: ProviderToken): provider is ProviderClassToken<T> {
+  export function isClassToken<T>(provider: ProviderToken<T>): provider is ProviderClassToken<T> {
     return hasProvideProperty(provider) && 'useClass' in provider;
   }
 
-  export function isValueToken<T>(provider: ProviderToken): provider is ProviderValueToken<T> {
+  export function isValueToken<T>(provider: ProviderToken<T>): provider is ProviderValueToken<T> {
     return hasProvideProperty(provider) && 'useValue' in provider;
   }
 
-  export function isFactoryToken<T>(provider: ProviderToken): provider is ProviderFactoryToken<T> {
+  export function isFactoryToken<T>(provider: ProviderToken<T>): provider is ProviderFactoryToken<T> {
     return hasProvideProperty(provider) && 'useFactory' in provider;
   }
 

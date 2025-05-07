@@ -2,10 +2,10 @@ export * from './core/constants';
 export * from './decorators';
 export * from './errors';
 export * from './enums';
+export * from './helpers';
 
 export { GlobalContainer, AppModule, GlobalAppModule, ProviderModule } from './core';
 
-export { injectionScopeToBindingScope, ProviderTokenHelpers, ProviderModuleHelpers } from './helpers';
 export type {
   IAppModule,
   AppModuleOptions,

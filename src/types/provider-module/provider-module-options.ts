@@ -1,7 +1,7 @@
 import type { Container } from 'inversify';
 
 import type { InjectionScope } from '../../enums';
-import type { ProviderToken } from '../provider-token';
+import type { DependencyProvider, ProviderToken } from '../provider-token';
 import type { IProviderModule } from './provider-module';
 
 export interface ProviderModuleOptions {
@@ -11,8 +11,8 @@ export interface ProviderModuleOptions {
   /** The list of imported {@link IProviderModule | modules} that export the {@link Provider | providers} which are required in this module. */
   imports?: IProviderModule[];
 
-  /** The {@link ProviderToken | providers} that will be instantiated by the container and that may be shared at least across this module. */
-  providers?: ProviderToken[];
+  /** The {@link DependencyProvider | providers} that will be instantiated by the container and that may be shared at least across this module. */
+  providers?: DependencyProvider[];
 
   /**
    * The subset of {@link ProviderToken | providers} or {@link IProviderModule | modules} that

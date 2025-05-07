@@ -15,6 +15,7 @@ import {
 } from '../errors';
 import { injectionScopeToBindingScope, isPlainObject, ProviderTokenHelpers } from '../helpers';
 import type {
+  DependencyProvider,
   IProviderModule,
   IProviderModuleNaked,
   LazyInitOptions,
@@ -97,7 +98,7 @@ export class ProviderModule implements IProviderModule {
 
   protected readonly moduleUtils!: IProviderModuleNaked['moduleUtils'];
 
-  private readonly providers!: ProviderToken[];
+  private readonly providers!: DependencyProvider[];
   private readonly exports!: StaticExports;
   private readonly imports!: IProviderModuleNaked[];
 

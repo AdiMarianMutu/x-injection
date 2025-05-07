@@ -4,8 +4,11 @@ import type { Class } from 'type-fest';
 import type { InjectionScope } from '../../enums';
 import type { OnEvent } from './on-event';
 
-export type ProviderToken<T = any> =
-  | ProviderIdentifier<T>
+export type ProviderToken<T = any> = ProviderIdentifier<T> | DependencyProvider<T>;
+
+export type DependencyProvider<T = any> =
+  | Class<T>
+  | Function
   | ProviderClassToken<T>
   | ProviderValueToken<T>
   | ProviderFactoryToken<T>;

@@ -39,7 +39,7 @@ Each `ProviderModule` manages its _own_ container, supporting easy **decoupling*
 - **NestJS-inspired module system:** Import and export providers between modules.
 - **Granular dependency encapsulation:** Each module manages its own container.
 - **Flexible provider scopes:** [Singleton](https://adimarianmutu.github.io/x-injection/enums/InjectionScope.html#singleton), [Request](https://adimarianmutu.github.io/x-injection/enums/InjectionScope.html#request), and [Transient](https://adimarianmutu.github.io/x-injection/enums/InjectionScope.html#transient) lifecycles.
-- **Lifecycle hooks:** [onReady](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleConstructor.html#onready) and [onDispose](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleConstructor.html#ondispose) for _module_ initialization and cleanup.
+- **Lifecycle hooks:** [onReady](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#onready) and [onDispose](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#ondispose) for _module_ initialization and cleanup.
 - **Advanced container access:** Directly interact with the underlying [InversifyJS containers](https://inversify.io/docs/api/container/) if needed.
 
 ## Installation
@@ -123,7 +123,7 @@ The below list shows them in order of priority _(highest to lowest)_, meaning th
    @Injectable(InjectionScope.Transient)
    class Transaction {}
    ```
-3. By providing the [defaultScope](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleConstructor.html#defaultscope) property when initializing a `ProviderModule`:
+3. By providing the [defaultScope](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#defaultscope) property when initializing a `ProviderModule`:
    ```ts
    const RainModule = new ProviderModule({
      defaultScope: InjectionScope.Transient,

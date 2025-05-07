@@ -1,6 +1,7 @@
 import { XInjectionError } from '../errors';
 import { ProviderModuleHelpers } from '../helpers';
 import type { AppModuleOptions, IAppModule, IProviderModuleNaked } from '../types';
+import { GLOBAL_APP_MODULE_ID } from './constants';
 import { ProviderModule } from './provider-module';
 
 /**
@@ -15,7 +16,7 @@ export class GlobalAppModule extends ProviderModule implements IAppModule {
   constructor() {
     super(
       ProviderModuleHelpers.buildInternalConstructorParams({
-        name: GlobalAppModule.name,
+        identifier: Symbol(GLOBAL_APP_MODULE_ID),
         isAppModule: true,
       })
     );
@@ -25,7 +26,7 @@ export class GlobalAppModule extends ProviderModule implements IAppModule {
     options: AppModuleOptions
   ): AsNaked extends false ? IAppModule : IAppModule & IProviderModuleNaked {
     if (this.isLoaded) {
-      throw new XInjectionError(`The '${this.nakedModule.name}' has already been registered!`);
+      throw new XInjectionError(`The '${this.toString()}' has already been registered!`);
     }
 
     this.nakedModule._lazyInit(options);

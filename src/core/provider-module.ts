@@ -19,26 +19,23 @@ import type {
   IProviderModuleNaked,
   LazyInitOptions,
   ProviderFactoryToken,
-  ProviderModuleConstructor,
-  ProviderModuleConstructorInternal,
   ProviderModuleGetManyParam,
   ProviderModuleGetManySignature,
-  ProviderOptions,
-  ProviderOrIdentifier,
-  ProviderScopeOption,
+  ProviderModuleOptions,
+  ProviderModuleOptionsInternal,
   ProviderToken,
   RegisteredBindingSideEffects,
   StaticExports,
 } from '../types';
 import { ProviderModuleUtils } from '../utils';
-import { ANONYMOUSE_MODULE_NAME } from './constants';
+import { ANONYMOUSE_MODULE_DEFAULT_ID } from './constants';
 import { GlobalContainer } from './global-container';
 
 /**
  * Modules are highly recommended as an effective way to organize your components.
  * For most applications, you'll likely have multiple modules, each encapsulating a closely related set of capabilities.
  *
- * _See {@link ProviderModuleConstructor | ProviderModuleOptions}_.
+ * _See {@link ProviderModuleOptions | ProviderModuleOptions}_.
  *
  * @example
  * ```ts
@@ -89,7 +86,8 @@ import { GlobalContainer } from './global-container';
  * ```
  */
 export class ProviderModule implements IProviderModule {
-  protected readonly name!: string;
+  readonly identifier: symbol;
+
   protected readonly isAppModule: boolean;
   protected readonly container!: Container;
   protected readonly defaultScope!: IProviderModuleNaked['defaultScope'];
@@ -106,7 +104,7 @@ export class ProviderModule implements IProviderModule {
   private readonly registeredBindingSideEffects!: RegisteredBindingSideEffects;
 
   constructor({
-    name = ANONYMOUSE_MODULE_NAME,
+    identifier = Symbol(ANONYMOUSE_MODULE_DEFAULT_ID),
     imports,
     providers,
     exports,
@@ -115,11 +113,11 @@ export class ProviderModule implements IProviderModule {
     onReady,
     onDispose,
     ..._internalParams
-  }: ProviderModuleConstructor) {
-    const internalParams = _internalParams as ProviderModuleConstructorInternal;
+  }: ProviderModuleOptions) {
+    const internalParams = _internalParams as ProviderModuleOptionsInternal;
 
-    // The module name once set should never be changed!
-    this.name = name;
+    // The module id once set should never be changed!
+    this.identifier = identifier;
     // Same goes for the `isAppModule`.
     this.isAppModule = internalParams.isAppModule ?? false;
 
@@ -139,54 +137,56 @@ export class ProviderModule implements IProviderModule {
     });
   }
 
-  get<T>(providerOrIdentifier: ProviderOrIdentifier<T>, isOptional?: boolean): T {
-    return this.__get(providerOrIdentifier, { optional: isOptional ?? false });
+  get<T>(provider: ProviderToken<T>, isOptional?: boolean): T {
+    return this.__get(provider, { optional: isOptional ?? false });
   }
 
-  getMany<D extends (ProviderModuleGetManyParam<any> | ProviderOrIdentifier)[]>(
+  getMany<D extends (ProviderModuleGetManyParam<any> | ProviderToken)[]>(
     ...deps: D | unknown[]
   ): ProviderModuleGetManySignature<D> {
     return (deps as D).map((dep) => {
-      const withOptions = isPlainObject(dep) && 'providerOrIdentifier' in dep;
+      const withOptions = isPlainObject(dep) && 'provider' in dep;
 
-      return this.get(withOptions ? dep.providerOrIdentifier : dep, withOptions ? dep.isOptional : false);
+      return this.get(withOptions ? dep.provider : dep, withOptions ? dep.isOptional : false);
     }) as any;
   }
 
-  onActivationEvent<T>(providerOrIdentifier: ProviderOrIdentifier<T>, cb: BindingActivation<T>): void {
-    this.container.onActivation(ProviderTokenHelpers.toSimpleServiceIdentifier(providerOrIdentifier), cb);
+  onActivationEvent<T>(provider: ProviderToken<T>, cb: BindingActivation<T>): void {
+    this.container.onActivation(ProviderTokenHelpers.toServiceIdentifier(provider), cb);
   }
 
-  onDeactivationEvent<T>(providerOrIdentifier: ProviderOrIdentifier<T>, cb: BindingDeactivation<T>): void {
-    this.container.onDeactivation(ProviderTokenHelpers.toSimpleServiceIdentifier(providerOrIdentifier), cb);
+  onDeactivationEvent<T>(provider: ProviderToken<T>, cb: BindingDeactivation<T>): void {
+    this.container.onDeactivation(ProviderTokenHelpers.toServiceIdentifier(provider), cb);
   }
 
   toNaked(): IProviderModuleNaked {
     return this as any;
   }
 
-  private prepareContainer(params: ProviderModuleConstructorInternal): Container {
-    let container: Container;
+  toString(): string {
+    return this.identifier.description!;
+  }
 
+  private prepareContainer(params: ProviderModuleOptionsInternal): Container {
     if (this.isAppModule) {
-      container = params.container?.() ?? GlobalContainer;
+      return params.container?.() ?? GlobalContainer;
     } else if (params.container) {
-      container = params.container();
+      console.warn(`[xInjection]: The '${this.toString()}' module is using a dynamic container!`);
+
+      return params.container();
     } else {
-      container = new Container({
+      return new Container({
         parent: GlobalContainer,
         defaultScope: this.defaultScope.inversify,
       });
     }
-
-    return container;
   }
 
   private injectImportedModules(modules?: IProviderModuleNaked[]): void {
     if (!modules || modules.length === 0) return;
 
     modules.forEach((module) => {
-      if (module.name === 'GlobalAppModule') {
+      if (module.toString() === 'GlobalAppModule') {
         throw new XInjectionProviderModuleError(this, `The 'GlobalAppModule' can't be imported!`);
       }
 
@@ -214,17 +214,20 @@ export class ProviderModule implements IProviderModule {
           return;
         }
 
-        const exportableProvider = exportable as ProviderOptions<unknown> & ProviderScopeOption;
+        const provider = exportable as ProviderToken;
 
-        const provider: ProviderFactoryToken<unknown> = {
-          scope: exportableProvider.scope,
-          provide: ProviderTokenHelpers.isSelfToken(exportableProvider as any)
-            ? (exportableProvider as any)
-            : exportableProvider.provide,
-          useFactory: () => module.get(exportable as ProviderToken),
-        };
-
-        this.moduleUtils.bindToContainer(provider);
+        this.moduleUtils.bindToContainer(
+          {
+            scope: ProviderTokenHelpers.getInjectionScopeByPriority(provider, module.defaultScope.native),
+            provide: ProviderTokenHelpers.toServiceIdentifier(provider),
+            useFactory: () => module.get(provider),
+            // As we are using a factory token, there is no need to include the `onEvent` and `when` properties
+            // into the processed `ProviderToken` created for this imported provider,
+            // because the `importedModule.get` invokation will
+            // fire the `onEvent` and `when` properties of the original imported provider.
+          } as ProviderFactoryToken<unknown>,
+          module.defaultScope.native
+        );
       });
     });
   }
@@ -457,7 +460,7 @@ export class ProviderModule implements IProviderModule {
   protected __bind<T>(provider: ProviderToken<T>): BindToFluentSyntax<T> {
     this.shouldThrowIfDisposed();
 
-    const binding = this.container.bind(ProviderTokenHelpers.toSimpleServiceIdentifier(provider));
+    const binding = this.container.bind(ProviderTokenHelpers.toServiceIdentifier(provider));
 
     this.invokeRegisteredBindingSideEffects(provider, 'onBind');
 
@@ -470,10 +473,10 @@ export class ProviderModule implements IProviderModule {
    * See {@link IProviderModuleNaked.__get}.
    */
   /* istanbul ignore next */
-  protected __get<T>(providerOrIdentifier: ProviderOrIdentifier<T>, options?: GetOptions): T {
+  protected __get<T>(provider: ProviderToken<T>, options?: GetOptions): T {
     this.shouldThrowIfDisposed();
 
-    return this.container.get(ProviderTokenHelpers.toSimpleServiceIdentifier(providerOrIdentifier), options);
+    return this.container.get(ProviderTokenHelpers.toServiceIdentifier(provider), options);
   }
 
   /**
@@ -482,10 +485,10 @@ export class ProviderModule implements IProviderModule {
    * See {@link IProviderModuleNaked.__getAsync}.
    */
   /* istanbul ignore next */
-  protected async __getAsync<T>(providerOrIdentifier: ProviderOrIdentifier<T>, options?: GetOptions): Promise<T> {
+  protected async __getAsync<T>(provider: ProviderToken<T>, options?: GetOptions): Promise<T> {
     this.shouldThrowIfDisposed();
 
-    return this.container.getAsync(ProviderTokenHelpers.toSimpleServiceIdentifier(providerOrIdentifier), options);
+    return this.container.getAsync(ProviderTokenHelpers.toServiceIdentifier(provider), options);
   }
 
   /**
@@ -494,10 +497,10 @@ export class ProviderModule implements IProviderModule {
    * See {@link IProviderModuleNaked.__getAll}.
    */
   /* istanbul ignore next */
-  protected __getAll<T>(providerOrIdentifier: ProviderOrIdentifier<T>, options?: GetOptions): T[] {
+  protected __getAll<T>(provider: ProviderToken<T>, options?: GetOptions): T[] {
     this.shouldThrowIfDisposed();
 
-    return this.container.getAll(ProviderTokenHelpers.toSimpleServiceIdentifier(providerOrIdentifier), options);
+    return this.container.getAll(ProviderTokenHelpers.toServiceIdentifier(provider), options);
   }
 
   /**
@@ -506,10 +509,10 @@ export class ProviderModule implements IProviderModule {
    * See {@link IProviderModuleNaked.__getAllAsync}.
    */
   /* istanbul ignore next */
-  protected async __getAllAsync<T>(providerOrIdentifier: ProviderOrIdentifier<T>, options?: GetOptions): Promise<T[]> {
+  protected async __getAllAsync<T>(provider: ProviderToken<T>, options?: GetOptions): Promise<T[]> {
     this.shouldThrowIfDisposed();
 
-    return this.container.getAllAsync(ProviderTokenHelpers.toSimpleServiceIdentifier(providerOrIdentifier), options);
+    return this.container.getAllAsync(ProviderTokenHelpers.toServiceIdentifier(provider), options);
   }
 
   /**
@@ -518,10 +521,10 @@ export class ProviderModule implements IProviderModule {
    * See {@link IProviderModuleNaked.__isBound}.
    */
   /* istanbul ignore next */
-  protected __isBound(providerOrIdentifier: ProviderOrIdentifier, options?: IsBoundOptions): boolean {
+  protected __isBound(provider: ProviderToken, options?: IsBoundOptions): boolean {
     this.shouldThrowIfDisposed();
 
-    return this.container.isBound(ProviderTokenHelpers.toSimpleServiceIdentifier(providerOrIdentifier), options);
+    return this.container.isBound(ProviderTokenHelpers.toServiceIdentifier(provider), options);
   }
 
   /**
@@ -530,10 +533,10 @@ export class ProviderModule implements IProviderModule {
    * See {@link IProviderModuleNaked.__isCurrentBound}.
    */
   /* istanbul ignore next */
-  protected __isCurrentBound(providerOrIdentifier: ProviderOrIdentifier, options?: IsBoundOptions): boolean {
+  protected __isCurrentBound(provider: ProviderToken, options?: IsBoundOptions): boolean {
     this.shouldThrowIfDisposed();
 
-    return this.container.isCurrentBound(ProviderTokenHelpers.toSimpleServiceIdentifier(providerOrIdentifier), options);
+    return this.container.isCurrentBound(ProviderTokenHelpers.toServiceIdentifier(provider), options);
   }
 
   /**
@@ -569,7 +572,7 @@ export class ProviderModule implements IProviderModule {
   protected async __rebind<T>(provider: ProviderToken<T>): Promise<BindToFluentSyntax<T>> {
     this.shouldThrowIfDisposed();
 
-    const binding = await this.container.rebind(ProviderTokenHelpers.toSimpleServiceIdentifier(provider));
+    const binding = await this.container.rebind(ProviderTokenHelpers.toServiceIdentifier(provider));
 
     this.invokeRegisteredBindingSideEffects(provider, 'onRebind');
 
@@ -585,7 +588,7 @@ export class ProviderModule implements IProviderModule {
   protected __rebindSync<T>(provider: ProviderToken<T>): BindToFluentSyntax<T> {
     this.shouldThrowIfDisposed();
 
-    const binding = this.container.rebindSync(ProviderTokenHelpers.toSimpleServiceIdentifier(provider));
+    const binding = this.container.rebindSync(ProviderTokenHelpers.toServiceIdentifier(provider));
 
     this.invokeRegisteredBindingSideEffects(provider, 'onRebind');
 
@@ -601,7 +604,7 @@ export class ProviderModule implements IProviderModule {
   protected async __unbind(provider: ProviderToken): Promise<void> {
     this.shouldThrowIfDisposed();
 
-    await this.container.unbind(ProviderTokenHelpers.toSimpleServiceIdentifier(provider));
+    await this.container.unbind(ProviderTokenHelpers.toServiceIdentifier(provider));
 
     this.removeRegisteredBindingSideEffects(provider);
   }
@@ -615,7 +618,7 @@ export class ProviderModule implements IProviderModule {
   protected __unbindSync(provider: ProviderToken): void {
     this.shouldThrowIfDisposed();
 
-    this.container.unbindSync(ProviderTokenHelpers.toSimpleServiceIdentifier(provider));
+    this.container.unbindSync(ProviderTokenHelpers.toServiceIdentifier(provider));
 
     this.removeRegisteredBindingSideEffects(provider);
   }

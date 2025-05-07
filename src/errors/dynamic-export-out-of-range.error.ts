@@ -13,7 +13,7 @@ export class XInjectionDynamicExportsOutOfRange extends XInjectionProviderModule
   constructor(module: IProviderModule) {
     super(
       module,
-      `The 'ProviderModule.${module.toNaked().name}' is trying to dynamically export providers/modules out of the declared range of the static exports!`
+      `The 'ProviderModule.${module.toString()}' is trying to dynamically export providers/modules out of the declared range of the static exports!`
     );
   }
 }

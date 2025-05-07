@@ -1,9 +1,12 @@
 import type { BindingActivation, BindingDeactivation } from 'inversify';
 
-import type { ProviderIdentifier, ProviderOrIdentifier, ProviderToken } from '../provider-token';
+import type { ProviderIdentifier, ProviderToken } from '../provider-token';
 import type { IProviderModuleNaked } from './provider-module-naked';
 
 export interface IProviderModule {
+  /** The module unique ID. */
+  readonly identifier: symbol;
+
   /**
    * Can be used to retrieve a resolved `dependency` from the module container.
    *
@@ -11,7 +14,7 @@ export interface IProviderModule {
    * @param isOptional When set to `false` _(default)_ an exception will be thrown when the {@link provider} isn't bound.
    * @returns Either the {@link T | dependency} or `undefined` if {@link isOptional} is set to `true`.
    */
-  get<T>(providerOrIdentifier: ProviderOrIdentifier<T>, isOptional?: boolean): T;
+  get<T>(providerOrIdentifier: ProviderToken<T>, isOptional?: boolean): T;
 
   /**
    * Can be used to retrieve many resolved `dependencies` from the module container at once.
@@ -34,7 +37,7 @@ export interface IProviderModule {
    * // Now the `configService` is of type `ConfigService` and the `userService` is of type `UserService`.
    * ```
    */
-  getMany<D extends (ProviderModuleGetManyParam<any> | ProviderOrIdentifier)[]>(
+  getMany<D extends (ProviderModuleGetManyParam<any> | ProviderToken)[]>(
     ...deps: D | unknown[]
   ): ProviderModuleGetManySignature<D>;
 
@@ -43,14 +46,14 @@ export interface IProviderModule {
    *
    * See {@link https://inversify.io/docs/api/container/#onactivation} for more details.
    */
-  onActivationEvent<T>(providerOrIdentifier: ProviderOrIdentifier<T>, cb: BindingActivation<T>): void;
+  onActivationEvent<T>(provider: ProviderToken<T>, cb: BindingActivation<T>): void;
 
   /**
    * Adds a deactivation handler for the {@link provider}.
    *
    * See {@link https://inversify.io/docs/api/container/#ondeactivation} for more details.
    */
-  onDeactivationEvent<T>(providerOrIdentifier: ProviderOrIdentifier<T>, cb: BindingDeactivation<T>): void;
+  onDeactivationEvent<T>(provider: ProviderToken<T>, cb: BindingDeactivation<T>): void;
 
   /**
    * Casts the current module type to the {@link IProviderModuleNaked} type.
@@ -58,23 +61,25 @@ export interface IProviderModule {
    * **Internally used and for testing purposes!**
    */
   toNaked(): IProviderModuleNaked;
+
+  /** Returns the {@link IProviderModule.identifier} `symbol` description. */
+  toString(): string;
 }
 
-export type ProviderModuleGetManySignature<Tokens extends (ProviderModuleGetManyParam<any> | ProviderOrIdentifier)[]> =
-  {
-    [K in keyof Tokens]: Tokens[K] extends ProviderModuleGetManyParam<infer U>
-      ? U
-      : Tokens[K] extends ProviderToken<infer T>
-        ? T
-        : Tokens[K] extends ProviderIdentifier<infer I>
-          ? I
-          : never;
-  };
+export type ProviderModuleGetManySignature<Tokens extends (ProviderModuleGetManyParam<any> | ProviderToken)[]> = {
+  [K in keyof Tokens]: Tokens[K] extends ProviderModuleGetManyParam<infer U>
+    ? U
+    : Tokens[K] extends ProviderToken<infer T>
+      ? T
+      : Tokens[K] extends ProviderIdentifier<infer I>
+        ? I
+        : never;
+};
 
 export type ProviderModuleGetManyParam<T> = {
   /** The {@link ProviderToken}. */
-  providerOrIdentifier: ProviderOrIdentifier<T>;
+  provider: ProviderToken<T>;
 
-  /** When set to `false` _(default)_ an exception will be thrown when the {@link ProviderModuleGetManyParam.providerOrIdentifier | provider} isn't bound. */
+  /** When set to `false` _(default)_ an exception will be thrown when the {@link ProviderModuleGetManyParam.provider | provider} isn't bound. */
   isOptional?: boolean;
 };

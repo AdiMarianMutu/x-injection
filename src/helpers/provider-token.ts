@@ -1,12 +1,13 @@
 import { getClassMetadata } from '@inversifyjs/core';
-import type { BindingIdentifier, ServiceIdentifier } from 'inversify';
+import type { ServiceIdentifier } from 'inversify';
 
 import { InjectionScope } from '../enums';
 import type {
   ProviderClassToken,
   ProviderFactoryToken,
-  ProviderOrIdentifier,
-  ProviderSelfToken,
+  ProviderIdentifier,
+  ProviderOptions,
+  ProviderScopeOption,
   ProviderToken,
   ProviderValueToken,
 } from '../types';
@@ -15,10 +16,6 @@ import { isPlainObject } from './is-plain-object';
 import { bindingScopeToInjectionScope } from './scope-converter';
 
 export namespace ProviderTokenHelpers {
-  export function isSelfToken<T>(provider: ProviderToken<T>): provider is ProviderSelfToken<T> {
-    return typeof provider === 'function';
-  }
-
   export function isClassToken<T>(provider: ProviderToken<T>): provider is ProviderClassToken<T> {
     return hasProvideProperty(provider) && 'useClass' in provider;
   }
@@ -31,36 +28,51 @@ export namespace ProviderTokenHelpers {
     return hasProvideProperty(provider) && 'useFactory' in provider;
   }
 
-  export function isSimpleProviderIdentifier(value: any): value is string | symbol {
-    return typeof value === 'string' || typeof value === 'symbol';
+  export function isProviderIdentifier<T = any>(value: any): value is ProviderIdentifier<T> {
+    return typeof value === 'string' || typeof value === 'symbol' || isClass(value) || typeof value === 'function';
   }
 
-  export function isBindingIdentifier(value: any): value is BindingIdentifier {
-    return isPlainObject(value) && typeof value === 'object' && 'id' in value;
+  export function toServiceIdentifier<T = any>(provider: ProviderToken<T>): ServiceIdentifier<T> {
+    return isProviderIdentifier(provider) ? provider : provider.provide;
   }
 
-  export function toSimpleServiceIdentifier<T = any>(
-    providerOrIdentifier: ProviderOrIdentifier<T> | BindingIdentifier
-  ): ServiceIdentifier<T> {
-    if (isSimpleProviderIdentifier(providerOrIdentifier) || isSelfToken(providerOrIdentifier as ProviderToken)) {
-      return providerOrIdentifier as any;
-    } else {
-      return (providerOrIdentifier as any)['provide'];
-    }
+  export function toServiceIdentifiers(providers: ProviderToken[]): ServiceIdentifier<unknown>[] {
+    return providers.map((provider) => toServiceIdentifier(provider));
   }
 
-  export function toSimpleServiceIdentifiers(
-    providersOrIdentifiers: ProviderOrIdentifier[]
-  ): ServiceIdentifier<unknown>[] {
-    return providersOrIdentifiers.map((provider) => toSimpleServiceIdentifier(provider));
+  /**
+   * The priority order is as follows:
+   * 1. From the `ProviderToken.scope`
+   * 2. From the class `@Injectable(scope)` decorator
+   * 3. From the `ProviderModule` default scope.
+   *
+   * @param provider The {@link ProviderToken}.
+   * @param moduleDefaultScope The module default scope.
+   */
+  export function getInjectionScopeByPriority(
+    provider: ProviderToken,
+    moduleDefaultScope: InjectionScope
+  ): InjectionScope {
+    return tryGetScopeFromProvider(provider) ?? tryGetDecoratorScopeFromClass(provider) ?? moduleDefaultScope;
+  }
+
+  export function tryGetProviderOptions<T>(
+    provider: ProviderToken<T>
+  ): (ProviderOptions<T> & ProviderScopeOption) | undefined {
+    if (!hasProvideProperty(provider)) return;
+
+    return provider as any;
   }
 
   export function tryGetScopeFromProvider(provider: ProviderToken): InjectionScope | undefined {
-    return isPlainObject(provider) && 'scope' in provider ? provider.scope : undefined;
+    const providerOptions = tryGetProviderOptions(provider);
+    if (!providerOptions) return;
+
+    return providerOptions.scope;
   }
 
   export function tryGetDecoratorScopeFromClass<T = any>(provider: ProviderToken<T>): InjectionScope | undefined {
-    const providerClass = toSimpleServiceIdentifier(provider);
+    const providerClass = toServiceIdentifier(provider);
     if (!isClass(providerClass)) return;
 
     const inversifyScope = getClassMetadata(providerClass as any)?.scope;
@@ -69,7 +81,7 @@ export namespace ProviderTokenHelpers {
     return bindingScopeToInjectionScope(inversifyScope);
   }
 
-  function hasProvideProperty(provider: ProviderToken): boolean {
+  function hasProvideProperty(provider: any): provider is object {
     return isPlainObject(provider) && typeof provider === 'object' && 'provide' in provider;
   }
 }

@@ -1,15 +1,10 @@
-import type {
-  DynamicExports,
-  ProviderModuleConstructor,
-  ProviderModuleConstructorInternal,
-  StaticExports,
-} from '../types';
+import type { DynamicExports, ProviderModuleOptions, ProviderModuleOptionsInternal, StaticExports } from '../types';
 
 export namespace ProviderModuleHelpers {
   export function buildInternalConstructorParams(
-    params: ProviderModuleConstructor & ProviderModuleConstructorInternal
-  ): ProviderModuleConstructor {
-    return params as ProviderModuleConstructor;
+    params: ProviderModuleOptions & ProviderModuleOptionsInternal
+  ): ProviderModuleOptions {
+    return params as ProviderModuleOptions;
   }
 
   export function isDynamicExport(exporter: StaticExports | DynamicExports): exporter is DynamicExports {

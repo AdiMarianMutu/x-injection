@@ -1,16 +1,14 @@
 import type { Container } from 'inversify';
 
-import type { InjectionScope } from '../../enums';
+import type { ContainerStrategy, InjectionScope } from '../../enums';
 import type { ProviderToken } from '../provider-token';
 import type { IProviderModule } from './provider-module';
 
-export interface ProviderModuleConstructor {
-  /**
-   * The module `name`.
-   *
-   * Defaults to `ProviderModule`.
-   */
-  name?: string;
+export interface ProviderModuleOptions {
+  /** The module unique ID. */
+  identifier?: symbol;
+
+  containerStrategy?: ContainerStrategy;
 
   /** The list of imported {@link IProviderModule | modules} that export the {@link Provider | providers} which are required in this module. */
   imports?: IProviderModule[];
@@ -27,16 +25,16 @@ export interface ProviderModuleConstructor {
   exports?: StaticExports;
 
   /**
-   * When provided, can be used to control which providers from the {@link ProviderModuleConstructor.exports | exports}
+   * When provided, can be used to control which providers from the {@link ProviderModuleOptions.exports | exports}
    * array should actually be exported into the importing module.
    *
-   * **Note:** _Static {@link ProviderModuleConstructor.exports | exports} should always be preferred as their static nature implies predictibility._
+   * **Note:** _Static {@link ProviderModuleOptions.exports | exports} should always be preferred as their static nature implies predictibility._
    * _This is for advanced use cases only, and most probably you may never need to use a dynamic export!_
    *
    * To keep in mind in order to avoid nasty bugs:
-   * - You **must always** return only the providers/modules declared into the static {@link ProviderModuleConstructor.exports | exports} array.
-   * - You **can** return _less_ providers/modules as long as they are still part of the static {@link ProviderModuleConstructor.exports | exports} array.
-   * - You **cannot** return _more_ providers/modules than the static {@link ProviderModuleConstructor.exports | exports} array!
+   * - You **must always** return only the providers/modules declared into the static {@link ProviderModuleOptions.exports | exports} array.
+   * - You **can** return _less_ providers/modules as long as they are still part of the static {@link ProviderModuleOptions.exports | exports} array.
+   * - You **cannot** return _more_ providers/modules than the static {@link ProviderModuleOptions.exports | exports} array!
    *
    * @example
    * ```ts
@@ -99,7 +97,7 @@ export interface ProviderModuleConstructor {
   onDispose?: (module: IProviderModule) => Promise<void>;
 }
 
-export interface ProviderModuleConstructorInternal {
+export interface ProviderModuleOptionsInternal {
   isAppModule?: boolean;
 
   /** Can be used to manually provide a {@link Container} instance. */
@@ -111,6 +109,6 @@ export type DynamicExports = (
   /** The {@link IProviderModule} which is importing this module. */
   importerModule: IProviderModule,
 
-  /** The {@link ProviderModuleConstructor.exports | exports} array of this module. */
+  /** The {@link ProviderModuleOptions.exports | exports} array of this module. */
   moduleExports: StaticExports
 ) => StaticExports;

@@ -5,12 +5,10 @@ import type { InjectionScope } from '../../enums';
 import type { OnEvent } from './on-event';
 
 export type ProviderToken<T = any> =
-  | ProviderSelfToken<T>
+  | ProviderIdentifier<T>
   | ProviderClassToken<T>
   | ProviderValueToken<T>
   | ProviderFactoryToken<T>;
-
-export type ProviderSelfToken<T> = Class<T>;
 
 export type ProviderClassToken<T> = (ProviderOptions<T> & ProviderScopeOption) & {
   /** The `class` to be injected. */
@@ -47,12 +45,11 @@ export type ProviderFactoryToken<T> = (ProviderOptions<T> & ProviderScopeOption)
    *
    * See {@link https://inversify.io/docs/api/binding-syntax/#toresolvedvalue} for more details.
    */
-  inject?: ProviderOrIdentifier[];
+  // inject?: ProviderOrIdentifier[];
+  inject?: ProviderToken[];
 };
 
 export type ProviderIdentifier<T = any> = Class<T> | Function | symbol | string;
-
-export type ProviderOrIdentifier<T = any> = ProviderToken<T> | ProviderIdentifier<T>;
 
 export interface ProviderOptions<T> {
   /** The injection `token`.  */

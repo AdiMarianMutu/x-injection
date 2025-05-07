@@ -5,6 +5,6 @@ export class XInjectionProviderModuleError extends Error {
   name = XInjectionProviderModuleError.name;
 
   constructor(module: IProviderModule, message: string) {
-    super(`{ProviderModule.${module.toNaked().name}}: ${message}`);
+    super(`{ProviderModule.${module.toString()}} => ${message}`);
   }
 }

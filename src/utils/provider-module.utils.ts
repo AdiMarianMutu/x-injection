@@ -7,8 +7,8 @@ import type {
   IProviderModuleNaked,
   ProviderClassToken,
   ProviderFactoryToken,
+  ProviderIdentifier,
   ProviderOptions,
-  ProviderSelfToken,
   ProviderToken,
   ProviderValueToken,
 } from '../types';
@@ -43,8 +43,8 @@ export class ProviderModuleUtils {
    * @param defaultScope Optionally provide the default {@link InjectionScope} to use when applicable.
    * @returns `true` when the {@link provider} has been bound otherwhise `false`.
    */
-  bindToContainer<T>(provider: ProviderToken<T>, defaultScope?: InjectionScope): boolean {
-    if (ProviderTokenHelpers.isSelfToken(provider)) {
+  bindToContainer<T>(provider: ProviderToken<T>, defaultScope: InjectionScope): boolean {
+    if (ProviderTokenHelpers.isProviderIdentifier(provider)) {
       return this.bindSelfTokenToContainer(provider, defaultScope);
     } else if (ProviderTokenHelpers.isClassToken(provider)) {
       return this.bindClassTokenToContainer(provider, defaultScope);
@@ -58,34 +58,28 @@ export class ProviderModuleUtils {
   }
 
   /** Low-level method which does exactly what {@link bindToContainer} does, however accepts a list of {@link providers}.  */
-  bindManyToContainer(providers: ProviderToken[], defaultScope?: InjectionScope): void {
+  bindManyToContainer(providers: ProviderToken[], defaultScope: InjectionScope): void {
     providers.forEach((provider) => this.bindToContainer(provider, defaultScope));
   }
 
-  private bindSelfTokenToContainer<T>(
-    provider: ProviderSelfToken<T>,
-    defaultScope: InjectionScope | undefined
-  ): boolean {
+  private bindSelfTokenToContainer<T>(provider: ProviderIdentifier<T>, defaultScope: InjectionScope): boolean {
     this.setBindingScope(
       provider,
-      this.container.bind(ProviderTokenHelpers.toSimpleServiceIdentifier(provider)).toSelf(),
+      this.container.bind(ProviderTokenHelpers.toServiceIdentifier(provider)).toSelf(),
       defaultScope
     );
 
     return this.moduleNaked.__isCurrentBound(provider);
   }
 
-  private bindClassTokenToContainer<T>(
-    provider: ProviderClassToken<T>,
-    defaultScope: InjectionScope | undefined
-  ): boolean {
+  private bindClassTokenToContainer<T>(provider: ProviderClassToken<T>, defaultScope: InjectionScope): boolean {
     this.setBindingOnEvent(
       provider,
       this.setWhenBinding(
         provider,
         this.setBindingScope(
           provider,
-          this.container.bind(ProviderTokenHelpers.toSimpleServiceIdentifier(provider)).to(provider.useClass),
+          this.container.bind(ProviderTokenHelpers.toServiceIdentifier(provider)).to(provider.useClass),
           defaultScope
         )
       )
@@ -99,17 +93,14 @@ export class ProviderModuleUtils {
       provider,
       this.setWhenBinding(
         provider,
-        this.container.bind(ProviderTokenHelpers.toSimpleServiceIdentifier(provider)).toConstantValue(provider.useValue)
+        this.container.bind(ProviderTokenHelpers.toServiceIdentifier(provider)).toConstantValue(provider.useValue)
       )
     );
 
     return this.moduleNaked.__isCurrentBound(provider);
   }
 
-  private bindFactoryTokenToContainer<T>(
-    provider: ProviderFactoryToken<T>,
-    defaultScope: InjectionScope | undefined
-  ): boolean {
+  private bindFactoryTokenToContainer<T>(provider: ProviderFactoryToken<T>, defaultScope: InjectionScope): boolean {
     this.setBindingOnEvent(
       provider,
       this.setWhenBinding(
@@ -117,11 +108,8 @@ export class ProviderModuleUtils {
         this.setBindingScope(
           provider,
           this.container
-            .bind(ProviderTokenHelpers.toSimpleServiceIdentifier(provider))
-            .toResolvedValue(
-              provider.useFactory,
-              ProviderTokenHelpers.toSimpleServiceIdentifiers(provider.inject ?? [])
-            ),
+            .bind(ProviderTokenHelpers.toServiceIdentifier(provider))
+            .toResolvedValue(provider.useFactory, ProviderTokenHelpers.toServiceIdentifiers(provider.inject ?? [])),
           defaultScope
         )
       )
@@ -134,21 +122,14 @@ export class ProviderModuleUtils {
   private setBindingScope<T>(
     provider: ProviderToken<T>,
     binding: BindInWhenOnFluentSyntax<T>,
-    defaultScope?: InjectionScope
+    defaultScope: InjectionScope
   ): BindWhenOnFluentSyntax<T> {
     // A constant token will always be a singleton.
     if (ProviderTokenHelpers.isValueToken(provider)) return binding;
 
-    const INJECTION_SCOPE =
-      // The priority order is as follows:
-      // 1. From the `ProviderToken.scope`
-      // 2. From the class `@Injectable(scope)` decorator
-      // 3. From the `ProviderModule` default scope.
-      ProviderTokenHelpers.tryGetScopeFromProvider(provider) ??
-      ProviderTokenHelpers.tryGetDecoratorScopeFromClass(provider) ??
-      defaultScope;
+    const injectionScope = ProviderTokenHelpers.getInjectionScopeByPriority(provider, defaultScope);
 
-    switch (INJECTION_SCOPE) {
+    switch (injectionScope) {
       case InjectionScope.Singleton:
         return binding.inSingletonScope();
       case InjectionScope.Transient:
@@ -156,8 +137,6 @@ export class ProviderModuleUtils {
       case InjectionScope.Request:
         return binding.inRequestScope();
     }
-
-    return binding;
   }
 
   /** Sets the `when` clause of a bound {@link provider}. */
@@ -165,8 +144,8 @@ export class ProviderModuleUtils {
     provider: ProviderToken<T>,
     binding: BindWhenOnFluentSyntax<T>
   ): BindOnFluentSyntax<unknown> {
-    // The `SelfToken` has no options.
-    if (ProviderTokenHelpers.isSelfToken(provider)) return binding;
+    // A `ProviderIdentifier` has no options.
+    if (ProviderTokenHelpers.isProviderIdentifier(provider)) return binding;
 
     const when = (provider as ProviderOptions<unknown>).when;
     if (!when) return binding;
@@ -176,8 +155,8 @@ export class ProviderModuleUtils {
 
   /** Sets the `activation` and `deactivation` events of a bound {@link provider}. */
   private setBindingOnEvent(provider: ProviderToken, binding: BindOnFluentSyntax<any>): void {
-    // The `SelfToken` has no options.
-    if (ProviderTokenHelpers.isSelfToken(provider)) return;
+    // A `ProviderIdentifier` has no options.
+    if (ProviderTokenHelpers.isProviderIdentifier(provider)) return;
 
     const opts = provider as ProviderOptions<unknown>;
 

@@ -1,11 +1,12 @@
 import { Container } from 'inversify';
 
 import {
+  ANONYMOUSE_MODULE_DEFAULT_ID,
   GlobalAppModule,
   InjectionScope,
   ProviderModule,
-  ProviderModuleConstructor,
   ProviderModuleHelpers,
+  ProviderModuleOptions,
   XInjectionError,
 } from '../src';
 import { XInjectionDynamicExportsOutOfRange, XInjectionProviderModuleDisposedError } from '../src/errors';
@@ -83,7 +84,7 @@ describe('Core', () => {
     });
 
     describe('Singleton', () => {
-      it('should be the same instance', () => {
+      it('should be the same instance inherited from AppModule', () => {
         const x = SingletonModule_NoExports.get(LoggerService);
         const y = SingletonModule_NoExports.get(LoggerService);
 
@@ -365,7 +366,7 @@ describe('ProviderModule', () => {
   it('should be anonymous (no `name` set)', () => {
     const AnonymousModule = new ProviderModule({}).toNaked();
 
-    expect(AnonymousModule.name).toBe('_AnonymousModule_');
+    expect(AnonymousModule.toString()).toContain(ANONYMOUSE_MODULE_DEFAULT_ID);
   });
 
   it('should correctly initialize with custom `Container`', () => {
@@ -396,7 +397,7 @@ describe('ProviderModule', () => {
   });
 
   it('should resolve many at once with optional provider', () => {
-    const [missingService] = AppModule.getMany({ providerOrIdentifier: 'MISSING_SERVICE', isOptional: true });
+    const [missingService] = AppModule.getMany({ provider: 'MISSING_SERVICE', isOptional: true });
 
     expect(missingService).toBe(undefined);
   });
@@ -429,7 +430,7 @@ describe('ProviderModule', () => {
   describe('Dispose Event', () => {
     afterEach(() => jest.clearAllMocks());
 
-    const MODULE_OPTIONS: ProviderModuleConstructor = {
+    const MODULE_OPTIONS: ProviderModuleOptions = {
       providers: [{ provide: 'FAKE_SERVICE', useValue: 0 }],
       onDispose: async (module) => {
         expect(module.toNaked().container instanceof Container).toBe(true);

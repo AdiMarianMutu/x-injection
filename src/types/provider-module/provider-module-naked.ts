@@ -6,17 +6,14 @@ import type { ProviderModuleUtils } from '../../utils';
 import type {
   DynamicExports,
   IProviderModule,
-  ProviderModuleConstructor,
-  ProviderModuleConstructorInternal,
+  ProviderModuleOptions,
+  ProviderModuleOptionsInternal,
   StaticExports,
 } from '../provider-module';
-import type { ProviderOrIdentifier, ProviderToken } from '../provider-token';
+import type { ProviderToken } from '../provider-token';
 
 /** Can be used to publicly expose internal properties and methods of an {@link IProviderModule} instance. */
 export interface IProviderModuleNaked extends IProviderModule {
-  /** The module `name`. */
-  readonly name: string;
-
   /** It'll be true when the current module is the global `AppModule`. */
   readonly isAppModule: boolean;
 
@@ -27,16 +24,22 @@ export interface IProviderModuleNaked extends IProviderModule {
   readonly moduleUtils: ProviderModuleUtils;
 
   /** The default injection scope of this module. */
-  readonly defaultScope: { native: InjectionScope; inversify: BindingScope };
+  readonly defaultScope: {
+    /** Scope from `xInjection` {@link InjectionScope} enum. */
+    native: InjectionScope;
+
+    /** Scope from `InversifyJS` {@link BindingScope} string union. */
+    inversify: BindingScope;
+  };
 
   /** The module dynamic exports method. */
   readonly dynamicExports: DynamicExports | undefined;
 
   /** The registered `callback` which will be invoked when the internal initialization process has been completed. */
-  readonly onReady: ProviderModuleConstructor['onReady'];
+  readonly onReady: ProviderModuleOptions['onReady'];
 
   /** The registered `callback` which will be invoked when the {@link _dispose} method is invoked. */
-  readonly onDispose: ProviderModuleConstructor['onDispose'];
+  readonly onDispose: ProviderModuleOptions['onDispose'];
 
   /** It'll _completely_ re-init the `module` with the provided {@link LazyInitOptions | options}. */
   _lazyInit(options: LazyInitOptions): void;
@@ -117,46 +120,46 @@ export interface IProviderModuleNaked extends IProviderModule {
    * The runtime identifier must be associated with only one binding and the binding must be synchronously resolved,
    * otherwise an error is thrown.
    *
-   * @param providerOrIdentifier Either the {@link ProviderToken} or the {@link ProviderIdentifier}.
+   * @param provider The {@link ProviderToken}.
    * @param options The {@link GetOptions}.
    * @returns Either the {@link T | dependency} or `undefined` if {@link GetOptions.optional} is set to `true`.
    *
    * See {@link https://inversify.io/docs/api/container/#get | Container.get} for more details.
    */
-  __get<T>(providerOrIdentifier: ProviderOrIdentifier<T>, options?: GetOptions): T;
+  __get<T>(provider: ProviderToken<T>, options?: GetOptions): T;
 
   /**
    * Resolves a dependency by its runtime identifier.
    * The runtime identifier must be associated with only one binding,
    * otherwise an error is thrown.
    *
-   * @param providerOrIdentifier Either the {@link ProviderToken} or the {@link ProviderIdentifier}.
+   * @param provider The {@link ProviderToken}.
    * @param options The {@link GetOptions}.
    * @returns Either the {@link T | dependency} or `undefined` if {@link GetOptions.optional} is set to `true`.
    *
    * See {@link https://inversify.io/docs/api/container/#getasync | Container.getAsync} for more details.
    */
-  __getAsync<T>(providerOrIdentifier: ProviderOrIdentifier<T>, options?: GetOptions): Promise<T>;
+  __getAsync<T>(provider: ProviderToken<T>, options?: GetOptions): Promise<T>;
 
   /** See {@link https://inversify.io/docs/api/container/#getall | Container.getAll} for more details. */
-  __getAll<T>(providerOrIdentifier: ProviderOrIdentifier<T>, options?: GetOptions): T[];
+  __getAll<T>(provider: ProviderToken<T>, options?: GetOptions): T[];
 
   /** See {@link https://inversify.io/docs/api/container/#getallasync | Container.getAllAsync} for more details. */
-  __getAllAsync<T>(providerOrIdentifier: ProviderOrIdentifier<T>, options?: GetOptions): Promise<T[]>;
+  __getAllAsync<T>(provider: ProviderToken<T>, options?: GetOptions): Promise<T[]>;
 
   /**
-   * Can be used to check if there are registered bindings for the {@link providerOrIdentifier | provider}.
+   * Can be used to check if there are registered bindings for the {@link provider | provider}.
    *
    * See {@link https://inversify.io/docs/api/container/#isbound | Container.isBound} for more details.
    */
-  __isBound(providerOrIdentifier: ProviderOrIdentifier, options?: IsBoundOptions): boolean;
+  __isBound(provider: ProviderToken, options?: IsBoundOptions): boolean;
 
   /**
-   * Can be useed to check if there are registered bindings for the {@link providerOrIdentifier | provider} only in the current container.
+   * Can be useed to check if there are registered bindings for the {@link provider | provider} only in the current container.
    *
    * See {@link https://inversify.io/docs/api/container/#iscurrentbound | Container.isCurrentBound} for more details.
    */
-  __isCurrentBound(providerOrIdentifier: ProviderOrIdentifier, options?: IsBoundOptions): boolean;
+  __isCurrentBound(provider: ProviderToken, options?: IsBoundOptions): boolean;
 
   /**
    * Save the state of the container to be later restored with the restore method.
@@ -228,8 +231,8 @@ export interface IProviderModuleNaked extends IProviderModule {
 }
 
 export type LazyInitOptions = Except<
-  ProviderModuleConstructor & ProviderModuleConstructorInternal,
-  'name' | 'isAppModule'
+  ProviderModuleOptions & ProviderModuleOptionsInternal,
+  'identifier' | 'isAppModule'
 >;
 
 export type RegisteredBindingSideEffects = Map<

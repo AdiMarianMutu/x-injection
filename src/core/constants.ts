@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import type { IProviderModuleNaked } from '../types';
+import type { IProviderModule } from '../types';
 
-/** The default {@link IProviderModuleNaked.name}. */
-export const ANONYMOUSE_MODULE_NAME = '_AnonymousModule_';
+/** The identifier of the `GlobalAppModule`. */
+export const GLOBAL_APP_MODULE_ID = 'GlobalAppModule';
+
+/** The default {@link IProviderModule.identifier}. */
+export const ANONYMOUSE_MODULE_DEFAULT_ID = 'AnonymousModule';

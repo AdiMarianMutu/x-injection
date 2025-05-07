@@ -1,14 +1,12 @@
 import type { Container } from 'inversify';
 
-import type { ContainerStrategy, InjectionScope } from '../../enums';
+import type { InjectionScope } from '../../enums';
 import type { ProviderToken } from '../provider-token';
 import type { IProviderModule } from './provider-module';
 
 export interface ProviderModuleOptions {
   /** The module unique ID. */
   identifier?: symbol;
-
-  containerStrategy?: ContainerStrategy;
 
   /** The list of imported {@link IProviderModule | modules} that export the {@link Provider | providers} which are required in this module. */
   imports?: IProviderModule[];

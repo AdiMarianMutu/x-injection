@@ -96,12 +96,10 @@ export class ProviderModule implements IProviderModule {
   protected readonly dynamicExports: IProviderModuleNaked['dynamicExports'];
   protected readonly onReady: IProviderModuleNaked['onReady'];
   protected readonly onDispose: IProviderModuleNaked['onDispose'];
-
   protected readonly moduleUtils!: IProviderModuleNaked['moduleUtils'];
-
-  private readonly providers!: DependencyProvider[];
-  private readonly exports!: StaticExports;
-  private readonly imports!: IProviderModuleNaked[];
+  protected readonly providers!: IProviderModuleNaked['providers'];
+  protected readonly exports!: IProviderModuleNaked['exports'];
+  protected readonly imports!: IProviderModuleNaked['imports'];
 
   private readonly registeredBindingSideEffects!: RegisteredBindingSideEffects;
 

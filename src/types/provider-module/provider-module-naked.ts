@@ -20,9 +20,6 @@ export interface IProviderModuleNaked extends IProviderModule {
   /** The low-level `InversifyJS` {@link https://inversify.io/docs/api/container/ | container} instance. */
   readonly container: Container;
 
-  /** Instance of the {@link ProviderModuleUtils}. */
-  readonly moduleUtils: ProviderModuleUtils;
-
   /** The default injection scope of this module. */
   readonly defaultScope: {
     /** Scope from `xInjection` {@link InjectionScope} enum. */
@@ -31,6 +28,18 @@ export interface IProviderModuleNaked extends IProviderModule {
     /** Scope from `InversifyJS` {@link BindingScope} string union. */
     inversify: BindingScope;
   };
+
+  /** Instance of the {@link ProviderModuleUtils}. */
+  readonly moduleUtils: ProviderModuleUtils;
+
+  /** The {@link DependencyProvider | providers} resolved by this module. */
+  readonly providers: DependencyProvider[];
+
+  /** What is exported from this module. */
+  readonly exports: StaticExports;
+
+  /** What is exported into this module. */
+  readonly imports: IProviderModuleNaked[];
 
   /** The module dynamic exports method. */
   readonly dynamicExports: DynamicExports | undefined;

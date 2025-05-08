@@ -48,7 +48,6 @@ export type ProviderFactoryToken<T> = (ProviderOptions<T> & ProviderScopeOption)
    *
    * See {@link https://inversify.io/docs/api/binding-syntax/#toresolvedvalue} for more details.
    */
-  // inject?: ProviderOrIdentifier[];
   inject?: ProviderToken[];
 };
 

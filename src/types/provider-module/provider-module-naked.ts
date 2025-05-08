@@ -10,7 +10,7 @@ import type {
   ProviderModuleOptionsInternal,
   StaticExports,
 } from '../provider-module';
-import type { ProviderToken } from '../provider-token';
+import type { DependencyProvider, ProviderToken } from '../provider-token';
 
 /** Can be used to publicly expose internal properties and methods of an {@link IProviderModule} instance. */
 export interface IProviderModuleNaked extends IProviderModule {
@@ -48,7 +48,7 @@ export interface IProviderModuleNaked extends IProviderModule {
   _getImportedModules(): IProviderModuleNaked[];
 
   /** Can be used to get the list of all the providers of this module. */
-  _getProviders(): ProviderToken[];
+  _getProviders(): DependencyProvider[];
 
   /** Can be used to get the list of all the exportable modules and providers of this module. */
   _getExportableModulesAndProviders(): StaticExports;

@@ -29,7 +29,7 @@ export interface IProviderModule {
    * const [car, engine, dashboard] = AppModule.getMany(
    *   Car,
    *   Engine,
-   *   { providerOrIdentifier: Dashboard, isOptional: true }
+   *   { provider: Dashboard, isOptional: true }
    * );
    *
    * // When auto-inference is not possible, you can manually cast the types.

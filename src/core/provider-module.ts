@@ -388,7 +388,7 @@ export class ProviderModule implements IProviderModule {
    *
    * See {@link IProviderModuleNaked._getProviders}.
    */
-  protected _getProviders(): ProviderToken[] {
+  protected _getProviders(): DependencyProvider[] {
     this.shouldThrowIfDisposed();
 
     return this.providers;

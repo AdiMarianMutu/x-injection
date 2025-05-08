@@ -12,6 +12,7 @@ import {
   XInjectionDynamicExportsOutOfRange,
   XInjectionProviderModuleDisposedError,
   XInjectionProviderModuleError,
+  XInjectionProviderModuleMissingIdentifierError,
 } from '../errors';
 import { injectionScopeToBindingScope, isPlainObject, ProviderTokenHelpers } from '../helpers';
 import type {
@@ -29,7 +30,6 @@ import type {
   StaticExports,
 } from '../types';
 import { ProviderModuleUtils } from '../utils';
-import { ANONYMOUS_MODULE_DEFAULT_ID } from './constants';
 import { GlobalContainer } from './global-container';
 
 /**
@@ -43,16 +43,19 @@ import { GlobalContainer } from './global-container';
  * import { ProviderModule } from '@adimm/x-injection';
  *
  * const EngineModule = new ProviderModule({
+ *   identifier: Symbol('EngineModule'),
  *   providers: [EngineService],
  *   exports: [EngineService]
  * });
  *
  * const DashboardModule = new ProviderModule({
+ *   identifier: Symbol('DashboardModule'),
  *   providers: [DashboardService],
  *   exports: [DashboardService]
  * });
  *
  * const CarModule = new ProviderModule({
+ *   identifier: Symbol('CarModule'),
  *   imports: [EngineModule, DashboardModule],
  *   providers: [CarService],
  *   exports: [CarService]
@@ -60,6 +63,7 @@ import { GlobalContainer } from './global-container';
  *
  * // Run-time class replacement:
  * const RedCarModule = new ProviderModule({
+ *   identifier: Symbol('RedCarModule'),
  *   imports: [CarModule],
  *   providers: [
  *     {
@@ -71,6 +75,7 @@ import { GlobalContainer } from './global-container';
  *
  * // Run-time factory example:
  * const BlackCarModule = new ProviderModule({
+ *   identifier: Symbol('BlackCarModule'),
  *   imports: [CarModule],
  *   providers: [
  *     {
@@ -104,7 +109,7 @@ export class ProviderModule implements IProviderModule {
   private readonly registeredBindingSideEffects!: RegisteredBindingSideEffects;
 
   constructor({
-    identifier = Symbol(ANONYMOUS_MODULE_DEFAULT_ID),
+    identifier,
     imports,
     providers,
     exports,
@@ -117,7 +122,7 @@ export class ProviderModule implements IProviderModule {
     const internalParams = _internalParams as ProviderModuleOptionsInternal;
 
     // The module id once set should never be changed!
-    this.identifier = identifier;
+    this.identifier = this.setIdentifier(identifier);
     // Same goes for the `isAppModule`.
     this.isAppModule = internalParams.isAppModule ?? false;
 
@@ -164,7 +169,13 @@ export class ProviderModule implements IProviderModule {
   }
 
   toString(): string {
-    return this.identifier.description!;
+    return this.identifier?.description ?? 'Unknown';
+  }
+
+  private setIdentifier(identifier: symbol): symbol {
+    if (!identifier) throw new XInjectionProviderModuleMissingIdentifierError(this);
+
+    return identifier;
   }
 
   private prepareContainer(params: ProviderModuleOptionsInternal): Container {

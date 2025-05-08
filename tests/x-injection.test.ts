@@ -1,7 +1,6 @@
 import { Container } from 'inversify';
 
 import {
-  ANONYMOUS_MODULE_DEFAULT_ID,
   GlobalAppModule,
   InjectionScope,
   ProviderModule,
@@ -9,7 +8,11 @@ import {
   ProviderModuleOptions,
   XInjectionError,
 } from '../src';
-import { XInjectionDynamicExportsOutOfRange, XInjectionProviderModuleDisposedError } from '../src/errors';
+import {
+  XInjectionDynamicExportsOutOfRange,
+  XInjectionProviderModuleDisposedError,
+  XInjectionProviderModuleMissingIdentifierError,
+} from '../src/errors';
 import { XInjectionProviderModuleError } from '../src/errors/provider-module.error';
 import {
   AppModule,
@@ -70,6 +73,7 @@ describe('Core', () => {
 
     it('should correctly use the `scope` declared into the `ProviderToken` rather than the default one from the module', () => {
       const m = new ProviderModule({
+        identifier: Symbol(0),
         defaultScope: InjectionScope.Singleton,
         providers: [
           {
@@ -138,6 +142,7 @@ describe('Core', () => {
 
       it('should use the scope from the `ProviderToken.scope`', () => {
         const m = new ProviderModule({
+          identifier: Symbol(0),
           defaultScope: InjectionScope.Singleton,
           providers: [
             {
@@ -153,6 +158,7 @@ describe('Core', () => {
 
       it('should use the scope from the `Injectable` decorator even if the module default scope is different', () => {
         const m = new ProviderModule({
+          identifier: Symbol(0),
           defaultScope: InjectionScope.Singleton,
           providers: [TransientDecoratedService],
         });
@@ -162,6 +168,7 @@ describe('Core', () => {
 
       it('should use the scope from the `ProviderModule.defaultScope`', () => {
         const m = new ProviderModule({
+          identifier: Symbol(0),
           defaultScope: InjectionScope.Transient,
           providers: [EmptyService],
         });
@@ -265,6 +272,7 @@ describe('Core', () => {
 
     it('should invoke all onUnbind registered side effects when `unbindAll`', async () => {
       const m = new ProviderModule({
+        identifier: Symbol(0),
         providers: [EmptyService, PaymentService],
       }).toNaked();
       const cb = jest.fn();
@@ -302,6 +310,7 @@ describe('AppModule', () => {
   it('should be able to re-invoke `register` after a dispose process', async () => {
     let onDisposeCbInvoked = false;
     const MODULE_OPTIONS = ProviderModuleHelpers.buildInternalConstructorParams({
+      identifier: Symbol(0),
       container: () => new Container(),
       onDispose: async () => {
         onDisposeCbInvoked = true;
@@ -342,17 +351,21 @@ describe('AppModule', () => {
     });
 
     it('should globally inherit nested providers from imported modules from `AppModule`', () => {
-      const m0 = new ProviderModule({ providers: [TransientDecoratedService], exports: [TransientDecoratedService] });
-      const m1 = new ProviderModule({ imports: [m0], exports: [m0] });
-      const m2 = new ProviderModule({ imports: [m1], exports: [m1] });
-      const m3 = new ProviderModule({ imports: [m2], exports: [m2] });
-      const m4 = new ProviderModule({ imports: [m3], exports: [m3] });
+      const m0 = new ProviderModule({
+        identifier: Symbol(0),
+        providers: [TransientDecoratedService],
+        exports: [TransientDecoratedService],
+      });
+      const m1 = new ProviderModule({ identifier: Symbol(1), imports: [m0], exports: [m0] });
+      const m2 = new ProviderModule({ identifier: Symbol(2), imports: [m1], exports: [m1] });
+      const m3 = new ProviderModule({ identifier: Symbol(3), imports: [m2], exports: [m2] });
+      const m4 = new ProviderModule({ identifier: Symbol(4), imports: [m3], exports: [m3] });
 
       const am = new GlobalAppModule().register<true>({
         imports: [m4],
       });
 
-      const m5 = new ProviderModule({});
+      const m5 = new ProviderModule({ identifier: Symbol(5) });
 
       expect(m5.get(TransientDecoratedService) instanceof TransientDecoratedService).toBe(true);
       expect(m5.get(TransientDecoratedService)).not.toBe(m5.get(TransientDecoratedService));
@@ -363,16 +376,14 @@ describe('AppModule', () => {
 describe('ProviderModule', () => {
   afterEach(() => jest.clearAllMocks());
 
-  it('should be anonymous (no `name` set)', () => {
-    const AnonymousModule = new ProviderModule({}).toNaked();
-
-    expect(AnonymousModule.toString()).toContain(ANONYMOUS_MODULE_DEFAULT_ID);
+  it('should throw if no identifier provided', () => {
+    expect(() => new ProviderModule({} as any)).toThrow(XInjectionProviderModuleMissingIdentifierError);
   });
 
   it('should correctly initialize with custom `Container`', () => {
     const container = new Container();
     const m = new ProviderModule(
-      ProviderModuleHelpers.buildInternalConstructorParams({ container: () => container })
+      ProviderModuleHelpers.buildInternalConstructorParams({ identifier: Symbol(0), container: () => container })
     ).toNaked();
 
     expect(container).toBe(m.container);
@@ -380,7 +391,7 @@ describe('ProviderModule', () => {
 
   it('should correctly overwrite internal container `Container` with `_overwriteContainer` method', () => {
     const container = new Container();
-    const m = new ProviderModule({}).toNaked();
+    const m = new ProviderModule({ identifier: Symbol(0) }).toNaked();
     m._overwriteContainer(() => container);
 
     expect(container).toBe(m.container);
@@ -403,7 +414,9 @@ describe('ProviderModule', () => {
   });
 
   it('should throw when a module tries to import the `AppModule`', () => {
-    expect(() => new ProviderModule({ imports: [AppModule] })).toThrow(XInjectionProviderModuleError);
+    expect(() => new ProviderModule({ identifier: Symbol(0), imports: [AppModule] })).toThrow(
+      XInjectionProviderModuleError
+    );
   });
 
   it('should correctly import exported providers from a module using dynamic exports', () => {
@@ -417,6 +430,7 @@ describe('ProviderModule', () => {
 
   it('should throw when importing a module having a dynamic exports with providers/modules out of the declared range of the static exports', () => {
     const m = new ProviderModule({
+      identifier: Symbol(0),
       providers: [EmptyService],
       exports: [EmptyService],
       dynamicExports: () => {
@@ -424,13 +438,16 @@ describe('ProviderModule', () => {
       },
     });
 
-    expect(() => new ProviderModule({ imports: [m] })).toThrow(XInjectionDynamicExportsOutOfRange);
+    expect(() => new ProviderModule({ identifier: Symbol(0), imports: [m] })).toThrow(
+      XInjectionDynamicExportsOutOfRange
+    );
   });
 
   describe('Dispose Event', () => {
     afterEach(() => jest.clearAllMocks());
 
     const MODULE_OPTIONS: ProviderModuleOptions = {
+      identifier: Symbol(0),
       providers: [{ provide: 'FAKE_SERVICE', useValue: 0 }],
       onDispose: async (module) => {
         expect(module.toNaked().container instanceof Container).toBe(true);

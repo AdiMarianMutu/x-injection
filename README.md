@@ -127,6 +127,7 @@ The below list shows them in order of priority _(highest to lowest)_, meaning th
 3. By providing the [defaultScope](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#defaultscope) property when initializing a `ProviderModule`:
    ```ts
    const RainModule = new ProviderModule({
+     identifier: Symbol('RainModule'),
      defaultScope: InjectionScope.Transient,
    });
    ```

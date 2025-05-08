@@ -152,7 +152,7 @@ export class SessionService {
 }
 
 export const DatabaseModule = new ProviderModule({
-  name: 'DatabaseModule',
+  identifier: Symbol('DatabaseModule'),
   providers: [DatabaseService],
   exports: [DatabaseService],
   onReady: async (module) => {
@@ -168,7 +168,7 @@ export const DatabaseModule = new ProviderModule({
 });
 
 export const SessionModule = new ProviderModule({
-  name: 'SessionModule',
+  identifier: Symbol('SessionModule'),
   defaultScope: InjectionScope.Request,
   providers: [SessionService],
   exports: [SessionService],
@@ -244,7 +244,7 @@ class CrowService extends AnimalService {
 }
 
 const AnimalModule = new ProviderModule({
-  name: 'AnimalModule',
+  identifier: Symbol('AnimalModule'),
   providers: [AnimalService, { provide: WingsService, useClass: WingsService, scope: InjectionScope.Transient }],
   exports: [AnimalService, WingsService],
   dynamicExports: (importerModule, moduleExports) => {
@@ -260,14 +260,14 @@ const AnimalModule = new ProviderModule({
 });
 
 const CrowModule = new ProviderModule({
-  name: 'CrowModule',
+  identifier: Symbol('CrowModule'),
   imports: [AnimalModule],
   providers: [CrowService],
   exports: [CrowService],
 });
 
 const CatModule = new ProviderModule({
-  name: 'CatModule',
+  identifier: Symbol('CatModule'),
   imports: [AnimalModule],
   providers: [CatService],
   exports: [CatService],

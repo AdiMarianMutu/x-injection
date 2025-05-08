@@ -88,6 +88,7 @@ import { GlobalContainer } from './global-container';
  */
 export class ProviderModule implements IProviderModule {
   readonly identifier: symbol;
+  readonly isDisposed = false;
 
   protected readonly isAppModule: boolean;
   protected readonly container!: Container;
@@ -327,6 +328,9 @@ export class ProviderModule implements IProviderModule {
     this.dynamicExports = null;
     //@ts-expect-error Read-only property.
     this.registeredBindingSideEffects = null;
+
+    //@ts-expect-error Read-only property.
+    this.isDisposed = true;
   }
 
   /**
@@ -344,6 +348,8 @@ export class ProviderModule implements IProviderModule {
     onDispose,
     ..._internalParams
   }: LazyInitOptions): void {
+    //@ts-expect-error Read-only property.
+    this.isDisposed = false;
     //@ts-expect-error Read-only property.
     this.imports = imports;
     //@ts-expect-error Read-only property.

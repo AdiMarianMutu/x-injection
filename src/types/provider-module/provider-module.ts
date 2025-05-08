@@ -7,6 +7,8 @@ export interface IProviderModule {
   /** The module unique ID. */
   readonly identifier: symbol;
 
+  readonly isDisposed: boolean;
+
   /**
    * Can be used to retrieve a resolved `dependency` from the module container.
    *

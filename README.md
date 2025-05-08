@@ -26,6 +26,7 @@ xInjection&nbsp;<a href="https://www.npmjs.com/package/@adimm/x-injection" targe
   - [Dynamic Exports](#dynamic-exports)
 - [Advanced Usage](#advanced-usage)
 - [Documentation](#documentation)
+- [ReactJS Implementation](#reactjs-implementation)
 - [Contributing](#contributing)
 
 ## Overview
@@ -307,6 +308,12 @@ For advanced scenarios, `IProviderModuleNaked` exposes additional methods (prefi
 Comprehensive, auto-generated documentation is available at:
 
 👉 [https://adimarianmutu.github.io/x-injection/index.html](https://adimarianmutu.github.io/x-injection/index.html)
+
+## ReactJS Implementation
+
+You want to use it within a [ReactJS](https://react.dev/) project? Don't worry, the library does already have an official implementation for React ⚛️
+
+For more details check out the [GitHub Repository](https://github.com/AdiMarianMutu/x-injection-reactjs).
 
 ## Contributing
 

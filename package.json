@@ -9,7 +9,11 @@
     "inversion of control",
     "ioc",
     "di",
-    "dependency injection"
+    "dependency injection",
+    "inversify",
+    "nest",
+    "ts",
+    "typescript"
   ],
   "license": "MIT",
   "scripts": {

@@ -251,7 +251,7 @@ const AnimalModule = new ProviderModule({
     // If the importer module is `CrowModule`, we'll export the entire
     // `exports` list, because `moduleExports` is actually the `exports` array declared above.
     // Meaning that the `CrowModule` container will also have access to the `WingsService`
-    if (importerModule.toNaked().name === 'CrowModule') return moduleExports;
+    if (importerModule.toString() === 'CrowModule') return moduleExports;
 
     // Otherwise it is the `CatModule` and we are not
     // exporting the `WingsService` as cats don't fly, or do they fly? 🧐

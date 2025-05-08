@@ -17,6 +17,7 @@ export type {
   DynamicExports,
   ProviderModuleGetManySignature,
   ProviderModuleGetManyParam,
+  DependencyProvider,
   ProviderToken,
   ProviderClassToken,
   ProviderValueToken,

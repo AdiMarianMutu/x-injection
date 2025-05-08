@@ -220,7 +220,7 @@ export class ProviderModule implements IProviderModule {
           {
             scope: ProviderTokenHelpers.getInjectionScopeByPriority(provider, module.defaultScope.native),
             provide: ProviderTokenHelpers.toServiceIdentifier(provider),
-            useFactory: () => module.get(provider),
+            useFactory: () => this._importedDependencyFactory(provider, module),
             // As we are using a factory token, there is no need to include the `onEvent` and `when` properties
             // into the processed `ProviderToken` created for this imported provider,
             // because the `importedModule.get` invokation will
@@ -304,6 +304,15 @@ export class ProviderModule implements IProviderModule {
   }
 
   //#region IProviderModuleNaked methods
+
+  /**
+   * **Publicly visible when the instance is casted to {@link IProviderModuleNaked}.**
+   *
+   * See {@link IProviderModuleNaked._importedDependencyFactory}.
+   */
+  protected _importedDependencyFactory<T>(provider: ProviderToken<T>, module: IProviderModuleNaked): T {
+    return module.get(provider);
+  }
 
   /**
    * **Publicly visible when the instance is casted to {@link IProviderModuleNaked}.**

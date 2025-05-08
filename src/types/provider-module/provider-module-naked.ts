@@ -50,6 +50,13 @@ export interface IProviderModuleNaked extends IProviderModule {
   /** The registered `callback` which will be invoked when the {@link _dispose} method is invoked. */
   readonly onDispose: ProviderModuleOptions['onDispose'];
 
+  /**
+   * Factory method which is invoked during the importation of the dependencies.
+   *
+   * Can be overriden to take control over the result of the imported modules resolution process.
+   */
+  _importedDependencyFactory<T>(provider: ProviderToken<T>, module: IProviderModuleNaked): T;
+
   /** It'll _completely_ re-init the `module` with the provided {@link LazyInitOptions | options}. */
   _lazyInit(options: LazyInitOptions): void;
 

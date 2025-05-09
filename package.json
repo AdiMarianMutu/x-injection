@@ -30,9 +30,9 @@
     "start:watch": "tsup src/index.ts --config ./config/tsup.config.ts --watch --onSuccess 'node dist/index.js'",
     "test": "jest --config ./config/jest.config.ts",
     "test:coverage": "npm run test && http-server ./coverage/lcov-report --cors -p 8081 -c-1",
-    "v:bump-patch": "npm version patch -m \"chore: update `package.json` patch version to %s\"",
-    "v:bump-minor": "npm version minor -m \"chore: update `package.json` minor version to %s\"",
-    "v:bump-major": "npm version major -m \"chore: update `package.json` major version %s\""
+    "v:bump-patch": "npm version patch -m \"chore: update lib patch version to %s\"",
+    "v:bump-minor": "npm version minor -m \"chore: update lib minor version to %s\"",
+    "v:bump-major": "npm version major -m \"chore: update lib major version %s\""
   },
   "dependencies": {
     "inversify": "^7.5.1",

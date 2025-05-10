@@ -157,10 +157,14 @@ export class ProviderModule implements IProviderModule {
   }
 
   onActivationEvent<T>(provider: ProviderToken<T>, cb: BindingActivation<T>): void {
+    this.shouldThrowIfDisposed();
+
     this.container.onActivation(ProviderTokenHelpers.toServiceIdentifier(provider), cb);
   }
 
   onDeactivationEvent<T>(provider: ProviderToken<T>, cb: BindingDeactivation<T>): void {
+    this.shouldThrowIfDisposed();
+
     this.container.onDeactivation(ProviderTokenHelpers.toServiceIdentifier(provider), cb);
   }
 

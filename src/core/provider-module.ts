@@ -93,7 +93,7 @@ import { GlobalContainer } from './global-container';
  */
 export class ProviderModule implements IProviderModule {
   readonly identifier: symbol;
-  readonly isDisposed = false;
+  readonly isDisposed: boolean = false;
 
   protected readonly isAppModule: boolean;
   protected readonly container!: Container;

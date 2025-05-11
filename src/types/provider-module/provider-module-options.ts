@@ -97,6 +97,7 @@ export interface ProviderModuleOptions {
 
 export interface ProviderModuleOptionsInternal {
   isAppModule?: boolean;
+  isDisposed?: boolean;
 
   /** Can be used to manually provide a {@link Container} instance. */
   container?: () => Container;

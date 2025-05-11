@@ -3,6 +3,7 @@ import type { ServiceIdentifier } from 'inversify';
 
 import { InjectionScope } from '../enums';
 import type {
+  DependencyProvider,
   ProviderClassToken,
   ProviderFactoryToken,
   ProviderIdentifier,
@@ -13,6 +14,7 @@ import type {
 } from '../types';
 import { isClass } from './is-class';
 import { isClassOrFunction } from './is-class-or-function';
+import { isFunction } from './is-function';
 import { isPlainObject } from './is-plain-object';
 import { bindingScopeToInjectionScope } from './scope-converter';
 
@@ -39,6 +41,31 @@ export namespace ProviderTokenHelpers {
 
   export function toServiceIdentifiers(providers: ProviderToken[]): ServiceIdentifier<unknown>[] {
     return providers.map((provider) => toServiceIdentifier(provider));
+  }
+
+  export function toDependencyProviderWithOptions<T extends DependencyProvider<any>>(
+    original: T,
+    // Can be used to override the options
+    override?: Partial<T>
+  ): T {
+    if (isClass(original)) {
+      return {
+        ...(override as any),
+        provide: (override as any)?.provide ?? original,
+        useClass: (override as any)?.useClass ?? original,
+      };
+    } else if (isFunction(original)) {
+      return {
+        ...(override as any),
+        provide: (override as any)?.provide ?? original,
+        useFactory: (override as any)?.useFactory ?? original,
+      };
+    }
+
+    return {
+      ...original,
+      ...override,
+    };
   }
 
   /**

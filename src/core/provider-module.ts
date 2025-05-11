@@ -16,6 +16,7 @@ import {
 } from '../errors';
 import { injectionScopeToBindingScope, isPlainObject, ProviderModuleHelpers, ProviderTokenHelpers } from '../helpers';
 import type {
+  CloneParams,
   DependencyProvider,
   IProviderModule,
   IProviderModuleNaked,
@@ -100,6 +101,7 @@ export class ProviderModule implements IProviderModule {
   protected readonly dynamicExports: IProviderModuleNaked['dynamicExports'];
   protected readonly onReady: IProviderModuleNaked['onReady'];
   protected readonly onDispose: IProviderModuleNaked['onDispose'];
+  protected readonly importedProvidersMap: IProviderModuleNaked['importedProvidersMap'];
   protected readonly moduleUtils!: IProviderModuleNaked['moduleUtils'];
   protected readonly imports!: IProviderModuleNaked['imports'];
   protected readonly providers!: IProviderModuleNaked['providers'];
@@ -173,7 +175,13 @@ export class ProviderModule implements IProviderModule {
     return this as any;
   }
 
-  clone(): IProviderModule {
+  clone(options?: CloneParams): IProviderModule {
+    let providers = [...this.providers];
+
+    if (options?.providersMap) {
+      providers = providers.map((provider) => options.providersMap!(provider, this, false));
+    }
+
     return new ProviderModule(
       ProviderModuleHelpers.buildInternalConstructorParams({
         isAppModule: this.isAppModule,
@@ -183,9 +191,10 @@ export class ProviderModule implements IProviderModule {
         dynamicExports: this.dynamicExports,
         onReady: this.onReady,
         onDispose: this.onDispose,
-        imports: this.imports,
-        providers: this.providers,
-        exports: this.exports,
+        importedProvidersMap: options?.importedProvidersMap,
+        imports: [...this.imports],
+        providers,
+        exports: [...this.exports],
       })
     );
   }
@@ -248,15 +257,19 @@ export class ProviderModule implements IProviderModule {
         }
 
         const provider = exportable as DependencyProvider;
-        const importedProvider = {
-          scope: ProviderTokenHelpers.getInjectionScopeByPriority(provider, module.defaultScope.native),
-          provide: ProviderTokenHelpers.toServiceIdentifier(provider),
-          useFactory: () => module.get(provider),
-          // As we are using a factory token, there is no need to include the `onEvent` and `when` properties
-          // into the processed `ProviderToken` created for this imported provider,
-          // because the `importedModule.get` invokation will
-          // fire the `onEvent` and `when` properties of the original imported provider.
-        };
+        const importedProvider = this.importedProvidersMap!(
+          {
+            scope: ProviderTokenHelpers.getInjectionScopeByPriority(provider, module.defaultScope.native),
+            provide: ProviderTokenHelpers.toServiceIdentifier(provider),
+            useFactory: () => module.get(provider),
+            // As we are using a factory token, there is no need to include the `onEvent` and `when` properties
+            // into the processed `ProviderToken` created for this imported provider,
+            // because the `importedModule.get` invokation will
+            // fire the `onEvent` and `when` properties of the original imported provider.
+          },
+          provider,
+          module
+        );
 
         this.importedProviders.set(module, [...(this.importedProviders.get(module) ?? []), importedProvider]);
 
@@ -403,6 +416,8 @@ export class ProviderModule implements IProviderModule {
     this.onReady = onReady;
     //@ts-expect-error Read-only property.
     this.onDispose = onDispose;
+    //@ts-expect-error Read-only propery.
+    this.importedProvidersMap = _internalParams.importedProvidersMap ?? ((provider) => provider);
 
     //@ts-expect-error Read-only property.
     this.container = this.prepareContainer({ ..._internalParams });

@@ -1,7 +1,8 @@
 import type { BindingActivation, BindingDeactivation } from 'inversify';
 
-import type { ProviderIdentifier, ProviderToken } from '../provider-token';
+import type { DependencyProvider, ProviderIdentifier, ProviderToken } from '../provider-token';
 import type { IProviderModuleNaked } from './provider-module-naked';
+import { ProviderModuleOptionsInternal } from './provider-module-options';
 
 export interface IProviderModule {
   /** The module unique ID. */
@@ -68,8 +69,12 @@ export interface IProviderModule {
    * Can be used to create a new instance of the current {@link IProviderModule | module}.
    *
    * **Note:** _All the providers will be registered again within the new module!_
+   * _And also the new module will still refrain values by reference to its parent module because of_
+   * _JS limitation in deeply/truly cloning an instance._
+   *
+   * @param options See {@link CloneParams}.
    */
-  clone(): IProviderModule;
+  clone(options?: CloneParams): IProviderModule;
 
   /** Returns the {@link IProviderModule.identifier} `symbol` description. */
   toString(): string;
@@ -92,3 +97,18 @@ export type ProviderModuleGetManyParam<T> = {
   /** When set to `false` _(default)_ an exception will be thrown when the {@link ProviderModuleGetManyParam.provider | provider} isn't bound. */
   isOptional?: boolean;
 };
+
+export interface CloneParams {
+  /** Can be used to override all the providers _before_ the binding process. */
+  providersMap?: (
+    /** The current {@link DependencyProvider | provider}. */
+    provider: DependencyProvider<any>,
+    /** The {@link IProviderModule | module} from where the {@link DependencyProvider | provider} originated. */
+    module: IProviderModule,
+    /** Flag indicating if the {@link provider} has been imported from the {@link module}. */
+    isImported: boolean
+  ) => DependencyProvider<any>;
+
+  /** Can be used to override all the _imported_ providers _before_ the binding process. */
+  importedProvidersMap?: ProviderModuleOptionsInternal['importedProvidersMap'];
+}

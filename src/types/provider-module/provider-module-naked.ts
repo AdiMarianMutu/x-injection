@@ -58,6 +58,9 @@ export interface IProviderModuleNaked extends IProviderModule {
   /** The registered `callback` which will be invoked when the {@link _dispose} method is invoked. */
   readonly onDispose: ProviderModuleOptions['onDispose'];
 
+  /** Can be used to override all the _imported_ providers _before_ the binding process. */
+  readonly importedProvidersMap: ProviderModuleOptionsInternal['importedProvidersMap'];
+
   /** It'll _completely_ re-init the `module` with the provided {@link LazyInitOptions | options}. */
   _lazyInit(options: LazyInitOptions): IProviderModule;
 

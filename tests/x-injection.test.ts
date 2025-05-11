@@ -2,10 +2,12 @@ import { Container } from 'inversify';
 
 import {
   GlobalAppModule,
+  Injectable,
   InjectionScope,
   ProviderModule,
   ProviderModuleHelpers,
   ProviderModuleOptions,
+  ProviderTokenHelpers,
   XInjectionError,
 } from '../src';
 import {
@@ -106,6 +108,60 @@ describe('Core', () => {
       });
 
       expect(m.get(EmptyService)).not.toBe(m.get(EmptyService));
+    });
+
+    it('should correctly clone a module and change its providers scope on the fly', () => {
+      @Injectable(InjectionScope.Transient)
+      class BaseService {
+        value = '';
+      }
+
+      @Injectable()
+      class InnerService {
+        constructor(readonly baseService: BaseService) {
+          this.baseService.value = 'Hello World!';
+        }
+      }
+
+      const BaseModule = new ProviderModule({
+        identifier: Symbol('__BaseModule'),
+        defaultScope: InjectionScope.Transient,
+        providers: [BaseService],
+        exports: [BaseService],
+      });
+
+      const ImportedModule = new ProviderModule({
+        identifier: Symbol('__ImportedModule'),
+        imports: [BaseModule],
+        providers: [
+          { provide: InnerService, useClass: InnerService },
+          { provide: PaymentService, useClass: PaymentService, scope: InjectionScope.Request },
+        ],
+        exports: [
+          BaseModule,
+          { provide: InnerService, useClass: InnerService },
+          { provide: PaymentService, useClass: PaymentService, scope: InjectionScope.Request },
+        ],
+      });
+
+      const RequestModule = new ProviderModule({
+        identifier: Symbol('__RequestModule'),
+        imports: [ImportedModule],
+        providers: [{ provide: EmptyService, useClass: EmptyService, scope: InjectionScope.Request }],
+      });
+
+      const m = RequestModule.clone({
+        providersMap: (provider) =>
+          ProviderTokenHelpers.toDependencyProviderWithOptions(provider, { scope: InjectionScope.Singleton }),
+        importedProvidersMap: (_, provider) =>
+          ProviderTokenHelpers.toDependencyProviderWithOptions(provider, {
+            scope: InjectionScope.Singleton,
+          }),
+      });
+
+      expect(m.get(InnerService).baseService).toBe(m.get(BaseService));
+      expect(m.get(EmptyService)).toBe(m.get(EmptyService));
+      expect(m.get(PaymentService)).toBe(m.get(PaymentService));
     });
 
     describe('Singleton', () => {

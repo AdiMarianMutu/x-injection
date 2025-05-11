@@ -58,7 +58,7 @@ export interface IProviderModuleNaked extends IProviderModule {
   _importedDependencyFactory<T>(provider: ProviderToken<T>, module: IProviderModuleNaked): T;
 
   /** It'll _completely_ re-init the `module` with the provided {@link LazyInitOptions | options}. */
-  _lazyInit(options: LazyInitOptions): void;
+  _lazyInit(options: LazyInitOptions): IProviderModule;
 
   /** Can be used to get the list of all the imported modules of this module. */
   _getImportedModules(): IProviderModuleNaked[];

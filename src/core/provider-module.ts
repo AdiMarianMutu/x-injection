@@ -369,7 +369,7 @@ export class ProviderModule implements IProviderModule {
     onReady,
     onDispose,
     ..._internalParams
-  }: LazyInitOptions): void {
+  }: LazyInitOptions): IProviderModule {
     //@ts-expect-error Read-only property.
     this.isDisposed = false;
     //@ts-expect-error Read-only property.
@@ -398,6 +398,8 @@ export class ProviderModule implements IProviderModule {
     this.injectProviders();
 
     this.onReady?.(this);
+
+    return this;
   }
 
   /**

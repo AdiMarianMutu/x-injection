@@ -186,7 +186,6 @@ export class ProviderModule implements IProviderModule {
       ProviderModuleHelpers.buildInternalConstructorParams({
         isAppModule: this.isAppModule,
         identifier: this.identifier,
-        isDisposed: this.isDisposed,
         defaultScope: this.defaultScope.native,
         dynamicExports: this.dynamicExports,
         onReady: this.onReady,

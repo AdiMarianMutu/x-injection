@@ -14,13 +14,12 @@ import {
   XInjectionProviderModuleError,
   XInjectionProviderModuleMissingIdentifierError,
 } from '../errors';
-import { injectionScopeToBindingScope, isPlainObject, ProviderTokenHelpers } from '../helpers';
+import { injectionScopeToBindingScope, isPlainObject, ProviderModuleHelpers, ProviderTokenHelpers } from '../helpers';
 import type {
   DependencyProvider,
   IProviderModule,
   IProviderModuleNaked,
   LazyInitOptions,
-  ProviderFactoryToken,
   ProviderModuleGetManyParam,
   ProviderModuleGetManySignature,
   ProviderModuleOptions,
@@ -102,9 +101,10 @@ export class ProviderModule implements IProviderModule {
   protected readonly onReady: IProviderModuleNaked['onReady'];
   protected readonly onDispose: IProviderModuleNaked['onDispose'];
   protected readonly moduleUtils!: IProviderModuleNaked['moduleUtils'];
-  protected readonly providers!: IProviderModuleNaked['providers'];
-  protected readonly exports!: IProviderModuleNaked['exports'];
   protected readonly imports!: IProviderModuleNaked['imports'];
+  protected readonly providers!: IProviderModuleNaked['providers'];
+  protected readonly importedProviders!: IProviderModuleNaked['importedProviders'];
+  protected readonly exports!: IProviderModuleNaked['exports'];
 
   private readonly registeredBindingSideEffects!: RegisteredBindingSideEffects;
 
@@ -123,6 +123,7 @@ export class ProviderModule implements IProviderModule {
 
     // The module id once set should never be changed!
     this.identifier = this.setIdentifier(identifier);
+    this.isDisposed = internalParams.isDisposed ?? false;
     // Same goes for the `isAppModule`.
     this.isAppModule = internalParams.isAppModule ?? false;
 
@@ -170,6 +171,23 @@ export class ProviderModule implements IProviderModule {
 
   toNaked(): IProviderModuleNaked {
     return this as any;
+  }
+
+  clone(): IProviderModule {
+    return new ProviderModule(
+      ProviderModuleHelpers.buildInternalConstructorParams({
+        isAppModule: this.isAppModule,
+        identifier: this.identifier,
+        isDisposed: this.isDisposed,
+        defaultScope: this.defaultScope.native,
+        dynamicExports: this.dynamicExports,
+        onReady: this.onReady,
+        onDispose: this.onDispose,
+        imports: this.imports,
+        providers: this.providers,
+        exports: this.exports,
+      })
+    );
   }
 
   toString(): string {
@@ -345,6 +363,8 @@ export class ProviderModule implements IProviderModule {
     //@ts-expect-error Read-only property.
     this.providers = null;
     //@ts-expect-error Read-only property.
+    this.importedProviders = null;
+    //@ts-expect-error Read-only property.
     this.exports = null;
     //@ts-expect-error Read-only property.
     this.dynamicExports = null;
@@ -376,6 +396,8 @@ export class ProviderModule implements IProviderModule {
     this.imports = imports;
     //@ts-expect-error Read-only property.
     this.providers = providers;
+    //@ts-expect-error Read-only property.
+    this.importedProviders = [];
     //@ts-expect-error Read-only property.
     this.exports = exports;
     //@ts-expect-error Read-only property.

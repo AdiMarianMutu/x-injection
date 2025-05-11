@@ -64,6 +64,13 @@ export interface IProviderModule {
    */
   toNaked(): IProviderModuleNaked;
 
+  /**
+   * Can be used to create a new instance of the current {@link IProviderModule | module}.
+   *
+   * **Note:** _All the providers will be registered again within the new module!_
+   */
+  clone(): IProviderModule;
+
   /** Returns the {@link IProviderModule.identifier} `symbol` description. */
   toString(): string;
 }

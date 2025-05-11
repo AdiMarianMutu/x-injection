@@ -443,6 +443,14 @@ describe('ProviderModule', () => {
     );
   });
 
+  it('should successfully create a clone', () => {
+    const m = TransientModule_ImportsSingletonModule_WithExports.clone();
+
+    expect(m).not.toBe(TransientModule_ImportsSingletonModule_WithExports);
+    expect(m.get(EmptyService)).toBe(m.get(EmptyService));
+    expect(m.get('TRANSIENT_EMPTY_SERVICE')).not.toBe(m.get('TRANSIENT_EMPTY_SERVICE'));
+  });
+
   describe('Dispose Event', () => {
     afterEach(() => jest.clearAllMocks());
 

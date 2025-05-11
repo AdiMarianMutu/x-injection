@@ -179,7 +179,7 @@ export class ProviderModule implements IProviderModule {
     let providers = [...this.providers];
 
     if (options?.providersMap) {
-      providers = providers.map((provider) => options.providersMap!(provider, this, false));
+      providers = providers.map((provider) => options.providersMap!(provider, this));
     }
 
     return new ProviderModule(

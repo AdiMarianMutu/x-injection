@@ -104,9 +104,7 @@ export interface CloneParams {
     /** The current {@link DependencyProvider | provider}. */
     provider: DependencyProvider<any>,
     /** The {@link IProviderModule | module} from where the {@link DependencyProvider | provider} originated. */
-    module: IProviderModule,
-    /** Flag indicating if the {@link provider} has been imported from the {@link module}. */
-    isImported: boolean
+    module: IProviderModule
   ) => DependencyProvider<any>;
 
   /** Can be used to override all the _imported_ providers _before_ the binding process. */

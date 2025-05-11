@@ -12,6 +12,7 @@ import type {
   ProviderValueToken,
 } from '../types';
 import { isClass } from './is-class';
+import { isClassOrFunction } from './is-class-or-function';
 import { isPlainObject } from './is-plain-object';
 import { bindingScopeToInjectionScope } from './scope-converter';
 
@@ -29,7 +30,7 @@ export namespace ProviderTokenHelpers {
   }
 
   export function isProviderIdentifier<T = any>(value: any): value is ProviderIdentifier<T> {
-    return typeof value === 'string' || typeof value === 'symbol' || isClass(value) || typeof value === 'function';
+    return typeof value === 'string' || typeof value === 'symbol' || isClassOrFunction(value);
   }
 
   export function toServiceIdentifier<T = any>(provider: ProviderToken<T>): ServiceIdentifier<T> {

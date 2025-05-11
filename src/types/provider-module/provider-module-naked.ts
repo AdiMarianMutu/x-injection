@@ -35,6 +35,14 @@ export interface IProviderModuleNaked extends IProviderModule {
   /** The {@link DependencyProvider | providers} resolved by this module. */
   readonly providers: DependencyProvider[];
 
+  /**
+   * The imported {@link DependencyProvider | providers} resolved by this module.
+   *
+   * _It is a `dictionary` where the key is the {@link IProviderModule | module} and the value an_
+   * _array containing the imported dependencies from that module_
+   */
+  readonly importedProviders: Map<IProviderModuleNaked, DependencyProvider[]>;
+
   /** What is exported from this module. */
   readonly exports: StaticExports;
 
@@ -49,13 +57,6 @@ export interface IProviderModuleNaked extends IProviderModule {
 
   /** The registered `callback` which will be invoked when the {@link _dispose} method is invoked. */
   readonly onDispose: ProviderModuleOptions['onDispose'];
-
-  /**
-   * Factory method which is invoked during the importation of the dependencies.
-   *
-   * Can be overriden to take control over the result of the imported modules resolution process.
-   */
-  _importedDependencyFactory<T>(provider: ProviderToken<T>, module: IProviderModuleNaked): T;
 
   /** It'll _completely_ re-init the `module` with the provided {@link LazyInitOptions | options}. */
   _lazyInit(options: LazyInitOptions): IProviderModule;

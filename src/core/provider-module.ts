@@ -247,20 +247,20 @@ export class ProviderModule implements IProviderModule {
           return;
         }
 
-        const provider = exportable as ProviderToken;
+        const provider = exportable as DependencyProvider;
+        const importedProvider = {
+          scope: ProviderTokenHelpers.getInjectionScopeByPriority(provider, module.defaultScope.native),
+          provide: ProviderTokenHelpers.toServiceIdentifier(provider),
+          useFactory: () => module.get(provider),
+          // As we are using a factory token, there is no need to include the `onEvent` and `when` properties
+          // into the processed `ProviderToken` created for this imported provider,
+          // because the `importedModule.get` invokation will
+          // fire the `onEvent` and `when` properties of the original imported provider.
+        };
 
-        this.moduleUtils.bindToContainer(
-          {
-            scope: ProviderTokenHelpers.getInjectionScopeByPriority(provider, module.defaultScope.native),
-            provide: ProviderTokenHelpers.toServiceIdentifier(provider),
-            useFactory: () => this._importedDependencyFactory(provider, module),
-            // As we are using a factory token, there is no need to include the `onEvent` and `when` properties
-            // into the processed `ProviderToken` created for this imported provider,
-            // because the `importedModule.get` invokation will
-            // fire the `onEvent` and `when` properties of the original imported provider.
-          } as ProviderFactoryToken<unknown>,
-          module.defaultScope.native
-        );
+        this.importedProviders.set(module, [...(this.importedProviders.get(module) ?? []), importedProvider]);
+
+        this.moduleUtils.bindToContainer(importedProvider, module.defaultScope.native);
       });
     });
   }
@@ -341,15 +341,6 @@ export class ProviderModule implements IProviderModule {
   /**
    * **Publicly visible when the instance is casted to {@link IProviderModuleNaked}.**
    *
-   * See {@link IProviderModuleNaked._importedDependencyFactory}.
-   */
-  protected _importedDependencyFactory<T>(provider: ProviderToken<T>, module: IProviderModuleNaked): T {
-    return module.get(provider);
-  }
-
-  /**
-   * **Publicly visible when the instance is casted to {@link IProviderModuleNaked}.**
-   *
    * See {@link IProviderModuleNaked._dispose}.
    */
   protected async _dispose(): Promise<void> {
@@ -397,7 +388,7 @@ export class ProviderModule implements IProviderModule {
     //@ts-expect-error Read-only property.
     this.providers = providers;
     //@ts-expect-error Read-only property.
-    this.importedProviders = [];
+    this.importedProviders = _internalParams.importedProviders ?? new Map();
     //@ts-expect-error Read-only property.
     this.exports = exports;
     //@ts-expect-error Read-only property.

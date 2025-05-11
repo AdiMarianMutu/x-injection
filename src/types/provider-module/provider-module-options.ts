@@ -3,6 +3,7 @@ import type { Container } from 'inversify';
 import type { InjectionScope } from '../../enums';
 import type { DependencyProvider, ProviderToken } from '../provider-token';
 import type { IProviderModule } from './provider-module';
+import type { IProviderModuleNaked } from './provider-module-naked';
 
 export interface ProviderModuleOptions {
   /** The module unique ID. */
@@ -98,6 +99,7 @@ export interface ProviderModuleOptions {
 export interface ProviderModuleOptionsInternal {
   isAppModule?: boolean;
   isDisposed?: boolean;
+  importedProviders?: IProviderModuleNaked['importedProviders'];
 
   /** Can be used to manually provide a {@link Container} instance. */
   container?: () => Container;

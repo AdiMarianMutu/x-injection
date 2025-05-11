@@ -261,6 +261,10 @@ export class ProviderModule implements IProviderModule {
         this.importedProviders.set(module, [...(this.importedProviders.get(module) ?? []), importedProvider]);
 
         this.moduleUtils.bindToContainer(importedProvider, module.defaultScope.native);
+
+        // Let's make sure that when the parent module unbinds the provider
+        // this module unbinds it aswell.
+        module._onUnbind(provider, () => this.__unbind(importedProvider));
       });
     });
   }

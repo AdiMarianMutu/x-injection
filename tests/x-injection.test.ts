@@ -68,6 +68,27 @@ describe('Core', () => {
     expect(NestedImportedModuleNoExports_WithExportedModules.get(EmptyService) instanceof EmptyService).toBe(true);
   });
 
+  it('should throw when trying to resolve an unbound imported dependency', () => {
+    class A {}
+
+    const ChildModule = new ProviderModule({
+      identifier: Symbol('ChildModule'),
+      providers: [A],
+      exports: [A],
+    });
+
+    const ParentModule = new ProviderModule({
+      identifier: Symbol('ParentModule'),
+      imports: [ChildModule],
+    });
+
+    expect(ParentModule.get(A)).toBe(ChildModule.get(A));
+
+    ChildModule.toNaked().__unbindSync(A);
+
+    expect(() => ParentModule.get(A)).toThrow();
+  });
+
   describe('InjectionScope', () => {
     afterEach(() => jest.clearAllMocks());
 

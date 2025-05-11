@@ -1,3 +1,5 @@
 export function isClass(v: any): boolean {
-  return typeof v === 'function' && /^class\s/.test(Function.prototype.toString.call(v));
+  if (typeof v !== 'function') return false;
+
+  return Function.prototype.toString.call(v).startsWith('class ');
 }

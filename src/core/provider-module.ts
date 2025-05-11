@@ -248,7 +248,7 @@ export class ProviderModule implements IProviderModule {
   }
 
   private injectProviders(): void {
-    this.moduleUtils.bindManyToContainer(this.providers, this.defaultScope.native);
+    this.providers.forEach((provider) => this.moduleUtils.bindToContainer(provider, this.defaultScope.native));
   }
 
   private registerBindingSideEffect(

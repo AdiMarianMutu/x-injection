@@ -3,6 +3,7 @@ import type { BindInWhenOnFluentSyntax, BindOnFluentSyntax, BindWhenOnFluentSynt
 import { InjectionScope } from '../enums';
 import { ProviderTokenHelpers } from '../helpers';
 import type {
+  DependencyProvider,
   IProviderModule,
   IProviderModuleNaked,
   ProviderClassToken,
@@ -43,7 +44,7 @@ export class ProviderModuleUtils {
    * @param defaultScope Optionally provide the default {@link InjectionScope} to use when applicable.
    * @returns `true` when the {@link provider} has been bound otherwhise `false`.
    */
-  bindToContainer<T>(provider: ProviderToken<T>, defaultScope: InjectionScope): boolean {
+  bindToContainer<T>(provider: DependencyProvider<T>, defaultScope: InjectionScope): boolean {
     if (ProviderTokenHelpers.isProviderIdentifier(provider)) {
       return this.bindSelfTokenToContainer(provider, defaultScope);
     } else if (ProviderTokenHelpers.isClassToken(provider)) {
@@ -55,11 +56,6 @@ export class ProviderModuleUtils {
     }
 
     return false;
-  }
-
-  /** Low-level method which does exactly what {@link bindToContainer} does, however accepts a list of {@link providers}.  */
-  bindManyToContainer(providers: ProviderToken[], defaultScope: InjectionScope): void {
-    providers.forEach((provider) => this.bindToContainer(provider, defaultScope));
   }
 
   private bindSelfTokenToContainer<T>(provider: ProviderIdentifier<T>, defaultScope: InjectionScope): boolean {

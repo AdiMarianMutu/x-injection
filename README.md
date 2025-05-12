@@ -313,12 +313,12 @@ It is very easy to create mock modules so you can use them in your unit tests.
 class ApiService {
   constructor(private readonly userService: UserService) {}
 
-  sendRequest<T>(location: LocationParams): Promise<T> {
+  async sendRequest<T>(location: LocationParams): Promise<T> {
     // Pseudo Implementation
     return this.sendToLocation(user, location);
   }
 
-  private sendToLocation(user: User, location: any): {};
+  private async sendToLocation(user: User, location: any): Promise<any> {}
 }
 
 const ApiModule = new ProviderModule({
@@ -336,7 +336,7 @@ const ApiModuleMocked = new ProviderModule({
     {
       provide: ApiService,
       useValue: {
-        sendRequest: (location) => {
+        sendRequest: async (location) => {
           console.log(location);
         },
       },

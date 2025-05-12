@@ -22,7 +22,7 @@ import type {
 export class ProviderModuleUtils {
   /** The low-level InversifyJS {@link Container} owned by {@link ProviderModuleUtils.module | module}. */
   get container(): Container {
-    return this.module.toNaked().container;
+    return this.moduleNaked.container;
   }
 
   /** The parent {@link IProviderModule | ProviderModule} of `this` instance. */

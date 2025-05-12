@@ -11,6 +11,7 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "preserveConstEnums": true,
+    "noImplicitOverride": true,
   },
   "include": ["src/**/*", "src/.docs-entry.ts"],
   "exclude": ["node_modules", "**/*.spec.ts", "**/*.test.ts"],

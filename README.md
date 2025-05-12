@@ -25,6 +25,7 @@ xInjection&nbsp;<a href="https://www.npmjs.com/package/@adimm/x-injection" targe
 - [Custom Provider Modules](#custom-provider-modules)
   - [Dynamic Exports](#dynamic-exports)
 - [Advanced Usage](#advanced-usage)
+- [Unit Tests](#unit-tests)
 - [Documentation](#documentation)
 - [ReactJS Implementation](#reactjs-implementation)
 - [Contributing](#contributing)
@@ -303,6 +304,48 @@ const globalContainer = GlobalContainer || AppModule.toNaked().container;
 ```
 
 For advanced scenarios, `IProviderModuleNaked` exposes additional methods (prefixed with `__`) that wrap InversifyJS APIs, supporting native `xInjection` provider tokens and more.
+
+## Unit Tests
+
+It is very easy to create mock modules so you can use them in your unit tests.
+
+```ts
+class ApiService {
+  constructor(private readonly userService: UserService) {}
+
+  sendRequest<T>(location: LocationParams): Promise<T> {
+    // Pseudo Implementation
+    return this.sendToLocation(user, location);
+  }
+
+  private sendToLocation(user: User, location: any): {};
+}
+
+const ApiModule = new ProviderModule({
+  identifier: Symbol('ApiModule'),
+  providers: [UserService, ApiService],
+});
+
+const ApiModuleMocked = new ProviderModule({
+  identifier: Symbol('ApiModule_MOCK'),
+  providers: [
+    {
+      provide: UserService,
+      useClass: UserService_Mock,
+    },
+    {
+      provide: ApiService,
+      useValue: {
+        sendRequest: (location) => {
+          console.log(location);
+        },
+      },
+    },
+  ],
+});
+```
+
+Now what you have to do is just to provide the `ApiModuleMocked` instead of the `ApiModule` 😎
 
 ## Documentation
 

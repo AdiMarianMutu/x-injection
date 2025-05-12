@@ -1,4 +1,4 @@
-import { XInjectionError } from '../errors';
+import { InjectionError } from '../errors';
 import { ProviderModuleHelpers } from '../helpers';
 import type { AppModuleOptions, IAppModule, IProviderModuleNaked } from '../types';
 import { GLOBAL_APP_MODULE_ID } from './constants';
@@ -26,7 +26,7 @@ export class GlobalAppModule extends ProviderModule implements IAppModule {
     options: AppModuleOptions
   ): AsNaked extends false ? IAppModule : IAppModule & IProviderModuleNaked {
     if (this.isLoaded) {
-      throw new XInjectionError(`The '${this.toString()}' has already been registered!`);
+      throw new InjectionError(`The '${this.toString()}' has already been registered!`);
     }
 
     this.nakedModule._lazyInit(options);

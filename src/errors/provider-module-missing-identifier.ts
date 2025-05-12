@@ -1,9 +1,9 @@
 import { IProviderModule } from '../types';
-import { XInjectionProviderModuleError } from './provider-module.error';
+import { InjectionProviderModuleError } from './provider-module.error';
 
 /** Exception which indicates that a module has been initialized without an `identifier`.  */
-export class XInjectionProviderModuleMissingIdentifierError extends XInjectionProviderModuleError {
-  name = XInjectionProviderModuleMissingIdentifierError.name;
+export class InjectionProviderModuleMissingIdentifierError extends InjectionProviderModuleError {
+  override name = InjectionProviderModuleMissingIdentifierError.name;
 
   constructor(module: IProviderModule) {
     super(module, 'An `identifier` must be supplied!');

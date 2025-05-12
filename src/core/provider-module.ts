@@ -9,10 +9,10 @@ import {
 
 import { InjectionScope } from '../enums';
 import {
-  XInjectionDynamicExportsOutOfRange,
-  XInjectionProviderModuleDisposedError,
-  XInjectionProviderModuleError,
-  XInjectionProviderModuleMissingIdentifierError,
+  InjectionDynamicExportsOutOfRange,
+  InjectionProviderModuleDisposedError,
+  InjectionProviderModuleError,
+  InjectionProviderModuleMissingIdentifierError,
 } from '../errors';
 import { injectionScopeToBindingScope, isPlainObject, ProviderModuleHelpers, ProviderTokenHelpers } from '../helpers';
 import type {
@@ -203,7 +203,7 @@ export class ProviderModule implements IProviderModule {
   }
 
   private setIdentifier(identifier: symbol): symbol {
-    if (!identifier) throw new XInjectionProviderModuleMissingIdentifierError(this);
+    if (!identifier) throw new InjectionProviderModuleMissingIdentifierError(this);
 
     return identifier;
   }
@@ -228,7 +228,7 @@ export class ProviderModule implements IProviderModule {
 
     modules.forEach((module) => {
       if (module.toString() === 'GlobalAppModule') {
-        throw new XInjectionProviderModuleError(this, `The 'GlobalAppModule' can't be imported!`);
+        throw new InjectionProviderModuleError(this, `The 'GlobalAppModule' can't be imported!`);
       }
 
       const moduleStaticExports = module._getExportableModulesAndProviders();
@@ -342,14 +342,14 @@ export class ProviderModule implements IProviderModule {
       dynamicExports.length > staticExports.length ||
       dynamicExports.some((dynamicExport) => !staticExports.includes(dynamicExport))
     ) {
-      throw new XInjectionDynamicExportsOutOfRange(module);
+      throw new InjectionDynamicExportsOutOfRange(module);
     }
   }
 
   private shouldThrowIfDisposed(): void {
     if (this.container !== null) return;
 
-    throw new XInjectionProviderModuleDisposedError(this);
+    throw new InjectionProviderModuleDisposedError(this);
   }
 
   //#region IProviderModuleNaked methods

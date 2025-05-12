@@ -1,5 +1,5 @@
 import type { IProviderModule } from '../types';
-import { XInjectionProviderModuleError } from './provider-module.error';
+import { InjectionProviderModuleError } from './provider-module.error';
 
 /**
  * Exception which indicates that an instance of {@link IProviderModule}
@@ -7,8 +7,8 @@ import { XInjectionProviderModuleError } from './provider-module.error';
  * is trying to dynamically export more or different providers/modules than the
  * ones declared into its static exports.
  */
-export class XInjectionDynamicExportsOutOfRange extends XInjectionProviderModuleError {
-  name = XInjectionDynamicExportsOutOfRange.name;
+export class InjectionDynamicExportsOutOfRange extends InjectionProviderModuleError {
+  override name = InjectionDynamicExportsOutOfRange.name;
 
   constructor(module: IProviderModule) {
     super(

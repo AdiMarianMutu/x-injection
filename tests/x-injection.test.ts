@@ -3,19 +3,19 @@ import { Container } from 'inversify';
 import {
   GlobalAppModule,
   Injectable,
+  InjectionError,
   InjectionScope,
   ProviderModule,
   ProviderModuleHelpers,
   ProviderModuleOptions,
   ProviderTokenHelpers,
-  XInjectionError,
 } from '../src';
 import {
-  XInjectionDynamicExportsOutOfRange,
-  XInjectionProviderModuleDisposedError,
-  XInjectionProviderModuleMissingIdentifierError,
+  InjectionDynamicExportsOutOfRange,
+  InjectionProviderModuleDisposedError,
+  InjectionProviderModuleMissingIdentifierError,
 } from '../src/errors';
-import { XInjectionProviderModuleError } from '../src/errors/provider-module.error';
+import { InjectionProviderModuleError } from '../src/errors/provider-module.error';
 import {
   AppModule,
   ClassProviderModule,
@@ -381,7 +381,7 @@ describe('AppModule', () => {
   });
 
   it('should throw error if `register` is invoked more than once per app life-cycle', () => {
-    expect(() => AppModule.register({})).toThrow(XInjectionError);
+    expect(() => AppModule.register({})).toThrow(InjectionError);
   });
 
   it('should be able to re-invoke `register` after a dispose process', async () => {
@@ -454,7 +454,7 @@ describe('ProviderModule', () => {
   afterEach(() => jest.clearAllMocks());
 
   it('should throw if no identifier provided', () => {
-    expect(() => new ProviderModule({} as any)).toThrow(XInjectionProviderModuleMissingIdentifierError);
+    expect(() => new ProviderModule({} as any)).toThrow(InjectionProviderModuleMissingIdentifierError);
   });
 
   it('should correctly initialize with custom `Container`', () => {
@@ -492,7 +492,7 @@ describe('ProviderModule', () => {
 
   it('should throw when a module tries to import the `AppModule`', () => {
     expect(() => new ProviderModule({ identifier: Symbol(0), imports: [AppModule] })).toThrow(
-      XInjectionProviderModuleError
+      InjectionProviderModuleError
     );
   });
 
@@ -516,7 +516,7 @@ describe('ProviderModule', () => {
     });
 
     expect(() => new ProviderModule({ identifier: Symbol(0), imports: [m] })).toThrow(
-      XInjectionDynamicExportsOutOfRange
+      InjectionDynamicExportsOutOfRange
     );
   });
 
@@ -557,9 +557,9 @@ describe('ProviderModule', () => {
 
       expect(onDisposeCbInvoked).toBe(true);
       expect(m.container).toBe(null);
-      expect(() => m._getImportedModules()).toThrow(XInjectionProviderModuleDisposedError);
-      expect(() => m._getProviders()).toThrow(XInjectionProviderModuleDisposedError);
-      expect(() => m._getExportableModulesAndProviders()).toThrow(XInjectionProviderModuleDisposedError);
+      expect(() => m._getImportedModules()).toThrow(InjectionProviderModuleDisposedError);
+      expect(() => m._getProviders()).toThrow(InjectionProviderModuleDisposedError);
+      expect(() => m._getExportableModulesAndProviders()).toThrow(InjectionProviderModuleDisposedError);
       expect(m.dynamicExports).toBe(null);
     });
 

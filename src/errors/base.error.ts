@@ -1,4 +1,4 @@
 /** Exception which indicates that there is a generic error. */
-export class XInjectionError extends Error {
-  name = XInjectionError.name;
+export class InjectionError extends Error {
+  override name = InjectionError.name;
 }

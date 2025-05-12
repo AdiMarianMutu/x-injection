@@ -56,8 +56,6 @@ export class GlobalAppModule extends ProviderModule implements IAppModule {
  *
  * @example
  * ```ts
- * import { AppModule } from '@adimm/x-injection';
- *
  * // The `register` method must be invoked only once during your application life cycle!
  * AppModule.register({
  *   imports: [ConfigModule, ApiModule, UserModule, DatabaseModule],

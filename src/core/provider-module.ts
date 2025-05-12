@@ -40,8 +40,6 @@ import { GlobalContainer } from './global-container';
  *
  * @example
  * ```ts
- * import { ProviderModule } from '@adimm/x-injection';
- *
  * const EngineModule = new ProviderModule({
  *   identifier: Symbol('EngineModule'),
  *   providers: [EngineService],

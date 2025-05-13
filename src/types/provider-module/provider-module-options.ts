@@ -23,6 +23,13 @@ export interface ProviderModuleOptions {
   exports?: StaticExports;
 
   /**
+   * The default {@link InjectionScope} to be used when a {@link ProviderToken} does not have a defined `scope`.
+   *
+   * Defaults to {@link InjectionScope.Singleton}.
+   */
+  defaultScope?: InjectionScope;
+
+  /**
    * When provided, can be used to control which providers from the {@link ProviderModuleOptions.exports | exports}
    * array should actually be exported into the importing module.
    *
@@ -67,13 +74,6 @@ export interface ProviderModuleOptions {
    * ```
    */
   dynamicExports?: DynamicExports;
-
-  /**
-   * The default {@link InjectionScope} to be used when a {@link ProviderToken} does not have a defined `scope`.
-   *
-   * Defaults to {@link InjectionScope.Singleton}.
-   */
-  defaultScope?: InjectionScope;
 
   /**
    * Callback which will be invoked once the module container has been initialized

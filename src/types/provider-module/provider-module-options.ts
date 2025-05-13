@@ -1,6 +1,6 @@
 import type { Container } from 'inversify';
-import type { GlobalAppModule } from 'src/core';
 
+import type { GlobalAppModule } from '../../core';
 import type { InjectionScope } from '../../enums';
 import type { DependencyProvider, ProviderToken } from '../provider-token';
 import type { IProviderModule } from './provider-module';

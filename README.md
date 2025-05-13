@@ -22,7 +22,11 @@ xInjection&nbsp;<a href="https://www.npmjs.com/package/@adimm/x-injection" targe
 - [Getting Started](#getting-started)
   - [Bootstrapping the AppModule](#bootstrapping-the-appmodule)
   - [Registering Global Providers](#registering-global-providers)
+  - [Registering Global Modules](#registering-global-modules)
   - [Injection Scope](#injection-scope)
+    - [Singleton](#singleton)
+    - [Transient](#transient)
+    - [Request](#request)
 - [Custom Provider Modules](#custom-provider-modules)
   - [Dynamic Exports](#dynamic-exports)
 - [Advanced Usage](#advanced-usage)
@@ -108,6 +112,29 @@ AppModule.register({
 
 Now, `LoggerService` and `ConfigService` can be injected anywhere in your app, including inside all `ProviderModules`.
 
+### Registering Global Modules
+
+You can also import entire modules into the `AppModule` like so:
+
+```ts
+const ConfigModule = new ProviderModule({
+  identifier: Symbol('ConfigModule'),
+  markAsGlobal: true,
+  providers: [
+    { provide: 'SECRET_TOKEN', useValue: '123' },
+    { provide: 'SECRET_TOKEN_2', useValue: 123 },
+  ],
+});
+
+AppModule.register({
+  imports: [ConfigModule],
+});
+```
+
+> **Note:** _All modules which are imported into the `AppModule` must have the [markAsGlobal](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#markAsGlobal) option set to `true`, otherwise the [InjectionProviderModuleGlobalMarkError](https://adimarianmutu.github.io/x-injection/classes/InjectionProviderModuleGlobalMarkError.html) exception will be thrown!_
+>
+> **Note2:** _An [InjectionProviderModuleGlobalMarkError](https://adimarianmutu.github.io/x-injection/classes/InjectionProviderModuleGlobalMarkError.html) exception will be thrown also when importing into the `AppModule` a module which does **not** have the [markAsGlobal](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#markAsGlobal) flag option!_
+
 ### Injection Scope
 
 There are mainly 3 first-class ways to set the [InjectionScope](https://adimarianmutu.github.io/x-injection/enums/InjectionScope.html) of a provider, and each one has an order priority.
@@ -135,6 +162,54 @@ The below list shows them in order of priority _(highest to lowest)_, meaning th
    ```
 
 > **Note:** _Imported modules/providers retain their original `InjectionScope`!_
+
+#### Singleton
+
+The [Singleton](https://adimarianmutu.github.io/x-injection/enums/InjectionScope.html#singleton) injection scope means that once a dependency has been resolved from within a module will be cached and further resolutions will use the value from the cache.
+
+Example:
+
+```ts
+expect(MyModule.get(MyProvider)).toBe(MyModule.get(MyProvider));
+// true
+```
+
+#### Transient
+
+The [Singleton](https://adimarianmutu.github.io/x-injection/enums/InjectionScope.html#transient) injection scope means that a _new_ instance of the dependency will be used whenever a resolution occurs.
+
+Example:
+
+```ts
+expect(MyModule.get(MyProvider)).toBe(MyModule.get(MyProvider));
+// false
+```
+
+#### Request
+
+The [Request](https://adimarianmutu.github.io/x-injection/enums/InjectionScope.html#request) injection scope means that the _same_ instance will be used when a resolution happens in the _same_ request scope.
+
+Example:
+
+```ts
+class Book {}
+
+class Box {
+  constructor(
+    private readonly book0: Book,
+    private readonly book1: Book
+  ) {}
+}
+
+const box0 = MyModule.get(Box);
+const box1 = MyModule.get(Box);
+
+expect(box0.book0).toBe(box0.book1);
+// true
+
+expect(box0.book0).toBe(box1.book0);
+// false
+```
 
 ## Custom Provider Modules
 

@@ -1,10 +1,14 @@
 import { AppModule as _AppModule, InjectionScope, ProviderModule } from '../../src';
 import { CLASS_PROVIDER, COMPLEX_FACTORY_PROVIDER, FACTORY_PROVIDER, VALUE_PROVIDER } from './providers';
-import { EmptyService, LoggerService, PaymentService, RequestService, UserService } from './services';
-
-export const AppModule = _AppModule.register<true>({
-  providers: [LoggerService, { provide: 'USER_SERVICE', useClass: UserService }],
-});
+import {
+  AService,
+  BService,
+  EmptyService,
+  LoggerService,
+  PaymentService,
+  RequestService,
+  UserService,
+} from './services';
 
 export const EmptyModule = new ProviderModule({ identifier: Symbol('EmptyModule') }).toNaked();
 
@@ -127,4 +131,8 @@ export const DynamicExportsModule = new ProviderModule({
 export const EmptyModule_ImportingModuleWithDynamicExports_NoExports = new ProviderModule({
   identifier: Symbol('EmptyModule_ImportingModuleWithDynamicExports'),
   imports: [DynamicExportsModule],
+});
+
+export const AppModule = _AppModule.register<true>({
+  providers: [LoggerService, { provide: 'USER_SERVICE', useClass: UserService }, AService, BService],
 });

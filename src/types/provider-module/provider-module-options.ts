@@ -1,4 +1,5 @@
 import type { Container } from 'inversify';
+import type { GlobalAppModule } from 'src/core';
 
 import type { InjectionScope } from '../../enums';
 import type { DependencyProvider, ProviderToken } from '../provider-token';
@@ -28,6 +29,19 @@ export interface ProviderModuleOptions {
    * Defaults to {@link InjectionScope.Singleton}.
    */
   defaultScope?: InjectionScope;
+
+  /**
+   * This option is only a _marker_, per se it doesn't do anything
+   * apart from marking this module as `global`.
+   * When a module is marked as `global`, it means that it is expected to be _imported_ into the `AppModule`.
+   *
+   * Expect an exception to be thrown:
+   * - If a `module` marked as global is **not** imported into the `AppModule`.
+   * - If a `module` **not** marked as global _is_ imported into the `AppModule`
+   *
+   * Defaults to `false`.
+   */
+  markAsGlobal?: true;
 
   /**
    * When provided, can be used to control which providers from the {@link ProviderModuleOptions.exports | exports}
@@ -98,6 +112,9 @@ export interface ProviderModuleOptions {
 export interface ProviderModuleOptionsInternal {
   isAppModule?: boolean;
   isDisposed?: boolean;
+
+  /** Can be used to manually provide the {@link IAppModule} instance. */
+  appModule?: () => GlobalAppModule;
 
   /** Can be used to manually provide a {@link Container} instance. */
   container?: () => Container;

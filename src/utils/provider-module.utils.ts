@@ -1,6 +1,8 @@
 import type { BindInWhenOnFluentSyntax, BindOnFluentSyntax, BindWhenOnFluentSyntax, Container } from 'inversify';
 
+import { AppModule } from '../core';
 import { InjectionScope } from '../enums';
+import { InjectionProviderModuleGlobalMarkError } from '../errors';
 import { ProviderTokenHelpers } from '../helpers';
 import type {
   DependencyProvider,
@@ -9,6 +11,7 @@ import type {
   ProviderClassToken,
   ProviderFactoryToken,
   ProviderIdentifier,
+  ProviderModuleOptionsInternal,
   ProviderOptions,
   ProviderToken,
   ProviderValueToken,
@@ -29,9 +32,15 @@ export class ProviderModuleUtils {
   readonly module: IProviderModule;
   readonly moduleNaked: IProviderModuleNaked;
 
-  constructor(module: IProviderModule) {
+  private readonly appModule = AppModule;
+
+  constructor(module: IProviderModule, internalOptions: ProviderModuleOptionsInternal) {
     this.module = module;
     this.moduleNaked = module.toNaked();
+
+    this.appModule = internalOptions.appModule?.() ?? this.appModule;
+
+    this.checkIfShouldBeImportedIntoAppModule();
   }
 
   /**
@@ -56,6 +65,21 @@ export class ProviderModuleUtils {
     }
 
     return false;
+  }
+
+  private checkIfShouldBeImportedIntoAppModule(): void {
+    if (this.moduleNaked.isAppModule || !this.module.isMarkedAsGlobal) return;
+
+    const isImportedIntoAppModule = this.appModule
+      .toNaked()
+      .imports?.some((imported) => this.module.toString() === imported.toString());
+
+    if (isImportedIntoAppModule) return;
+
+    throw new InjectionProviderModuleGlobalMarkError(
+      this.module,
+      `Is marked as 'global' and has not been imported into the 'AppModule'!`
+    );
   }
 
   private bindSelfTokenToContainer<T>(provider: ProviderIdentifier<T>, defaultScope: InjectionScope): boolean {

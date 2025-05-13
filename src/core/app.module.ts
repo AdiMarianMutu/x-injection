@@ -1,4 +1,4 @@
-import { InjectionError } from '../errors';
+import { InjectionError, InjectionProviderModuleGlobalMarkError } from '../errors';
 import { ProviderModuleHelpers } from '../helpers';
 import type { AppModuleOptions, IAppModule, IProviderModuleNaked } from '../types';
 import { GLOBAL_APP_MODULE_ID } from './constants';
@@ -10,6 +10,8 @@ import { ProviderModule } from './provider-module';
  * **You shouldn't initialize a new instance of this class, please use the {@link AppModule} instance!**
  */
 export class GlobalAppModule extends ProviderModule implements IAppModule {
+  override isMarkedAsGlobal: boolean = true;
+
   private nakedModule = this as unknown as IProviderModuleNaked;
   private isLoaded = false;
 
@@ -31,6 +33,8 @@ export class GlobalAppModule extends ProviderModule implements IAppModule {
 
     this.nakedModule._lazyInit(options);
 
+    this.checkIfImportsHaveGlobalMark();
+
     this.isLoaded = true;
 
     return this as any;
@@ -45,6 +49,17 @@ export class GlobalAppModule extends ProviderModule implements IAppModule {
     this.isLoaded = false;
 
     super._dispose();
+  }
+
+  private checkIfImportsHaveGlobalMark(): void {
+    this.imports.forEach((imported) => {
+      if (imported.isMarkedAsGlobal) return;
+
+      throw new InjectionProviderModuleGlobalMarkError(
+        imported,
+        'Is not marked as `global` but has been imported into the `AppModule`!'
+      );
+    });
   }
 }
 

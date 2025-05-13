@@ -4,6 +4,14 @@ import { Injectable, InjectionScope } from '../../src';
 export class EmptyService {}
 
 @Injectable()
+export class AService {}
+
+@Injectable()
+export class BService {
+  constructor(public readonly aService: AService) {}
+}
+
+@Injectable()
 export class LoggerService {
   log(message: string): void {
     console.log(`[Logger]: ${message}`);

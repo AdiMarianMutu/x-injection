@@ -13,6 +13,7 @@ import {
 import {
   InjectionDynamicExportsOutOfRange,
   InjectionProviderModuleDisposedError,
+  InjectionProviderModuleGlobalMarkError,
   InjectionProviderModuleMissingIdentifierError,
 } from '../src/errors';
 import { InjectionProviderModuleError } from '../src/errors/provider-module.error';
@@ -89,6 +90,27 @@ describe('Core', () => {
     ChildModule.toNaked().__unbindSync(A);
 
     expect(() => ParentModule.get(A)).toThrow();
+  });
+
+  it('should throw an error when a `module` is marked as `global` and not imported into `AppModule`', () => {
+    expect(() => {
+      new ProviderModule({
+        identifier: Symbol('HasGlobalMark'),
+        markAsGlobal: true,
+      });
+    }).toThrow(InjectionProviderModuleGlobalMarkError);
+  });
+
+  it('should throw an error when a `module` is NOT marked as `global` and imported into `AppModule`', () => {
+    expect(() => {
+      new GlobalAppModule().register({
+        imports: [
+          new ProviderModule({
+            identifier: Symbol('MissingGlobalMark'),
+          }),
+        ],
+      });
+    }).toThrow(InjectionProviderModuleGlobalMarkError);
   });
 
   describe('InjectionScope', () => {
@@ -362,215 +384,227 @@ describe('Core', () => {
       expect(cb).toHaveBeenCalledTimes(2);
     });
   });
-});
 
-describe('AppModule', () => {
-  afterEach(() => jest.clearAllMocks());
-
-  it('should have a bound container', () => {
-    expect(AppModule.container).toBeDefined();
-    expect(AppModule.container instanceof Container).toBe(true);
-  });
-
-  it('should have the `LoggerService` bound', () => {
-    expect(AppModule.__isCurrentBound(LoggerService)).toBe(true);
-  });
-
-  it('should have the `UserService` bound', () => {
-    expect(AppModule.__isCurrentBound(LoggerService)).toBe(true);
-  });
-
-  it('should throw error if `register` is invoked more than once per app life-cycle', () => {
-    expect(() => AppModule.register({})).toThrow(InjectionError);
-  });
-
-  it('should be able to re-invoke `register` after a dispose process', async () => {
-    let onDisposeCbInvoked = false;
-    const MODULE_OPTIONS = ProviderModuleHelpers.buildInternalConstructorParams({
-      identifier: Symbol(0),
-      container: () => new Container(),
-      onDispose: async () => {
-        onDisposeCbInvoked = true;
-      },
-    });
-
-    const m = new GlobalAppModule().register<true>(MODULE_OPTIONS);
-
-    await m._dispose();
-
-    expect(onDisposeCbInvoked).toBe(true);
-    expect((m as any)['isLoaded']).toBe(false);
-
-    (m as unknown as GlobalAppModule).register(MODULE_OPTIONS);
-
-    expect((m as any)['isLoaded']).toBe(true);
-  });
-
-  it('should correctly invoke the `LoggerService.log` method', () => {
-    const loggerService = AppModule.get(LoggerService);
-    const logSpy = jest.spyOn(console, 'log');
-    const logMessage = '04/05/2025-sad';
-
-    loggerService.log(logMessage);
-
-    expect(logSpy).toHaveBeenCalledWith(`[Logger]: ${logMessage}`);
-  });
-
-  describe('Inheritance', () => {
+  describe('AppModule', () => {
     afterEach(() => jest.clearAllMocks());
 
-    it('should resolve the `LoggerService` from the `AppModule`', () => {
-      expect(EmptyModule.get(LoggerService) instanceof LoggerService).toBe(true);
+    it('should have a bound container', () => {
+      expect(AppModule.container).toBeDefined();
+      expect(AppModule.container instanceof Container).toBe(true);
     });
 
-    it('should be the same `LoggerService` instance as the one from the `AppModule`', () => {
-      expect(EmptyModule.get(LoggerService)).toBe(AppModule.get(LoggerService));
+    it('should have the `LoggerService` bound', () => {
+      expect(AppModule.__isCurrentBound(LoggerService)).toBe(true);
     });
 
-    it('should globally inherit nested providers from imported modules from `AppModule`', () => {
-      const m0 = new ProviderModule({
-        identifier: Symbol(0),
-        providers: [TransientDecoratedService],
-        exports: [TransientDecoratedService],
-      });
-      const m1 = new ProviderModule({ identifier: Symbol(1), imports: [m0], exports: [m0] });
-      const m2 = new ProviderModule({ identifier: Symbol(2), imports: [m1], exports: [m1] });
-      const m3 = new ProviderModule({ identifier: Symbol(3), imports: [m2], exports: [m2] });
-      const m4 = new ProviderModule({ identifier: Symbol(4), imports: [m3], exports: [m3] });
-
-      const am = new GlobalAppModule().register<true>({
-        imports: [m4],
-      });
-
-      const m5 = new ProviderModule({ identifier: Symbol(5) });
-
-      expect(m5.get(TransientDecoratedService) instanceof TransientDecoratedService).toBe(true);
-      expect(m5.get(TransientDecoratedService)).not.toBe(m5.get(TransientDecoratedService));
-    });
-  });
-});
-
-describe('ProviderModule', () => {
-  afterEach(() => jest.clearAllMocks());
-
-  it('should throw if no identifier provided', () => {
-    expect(() => new ProviderModule({} as any)).toThrow(InjectionProviderModuleMissingIdentifierError);
-  });
-
-  it('should correctly initialize with custom `Container`', () => {
-    const container = new Container();
-    const m = new ProviderModule(
-      ProviderModuleHelpers.buildInternalConstructorParams({ identifier: Symbol(0), container: () => container })
-    ).toNaked();
-
-    expect(container).toBe(m.container);
-  });
-
-  it('should correctly overwrite internal container `Container` with `_overwriteContainer` method', () => {
-    const container = new Container();
-    const m = new ProviderModule({ identifier: Symbol(0) }).toNaked();
-    m._overwriteContainer(() => container);
-
-    expect(container).toBe(m.container);
-  });
-
-  it('should resolve many at once', () => {
-    const [loggerService, userService] = AppModule.getMany<[typeof LoggerService, typeof UserService]>(
-      LoggerService,
-      'USER_SERVICE'
-    );
-
-    expect(loggerService instanceof LoggerService).toBe(true);
-    expect(userService instanceof UserService).toBe(true);
-  });
-
-  it('should resolve many at once with optional provider', () => {
-    const [missingService] = AppModule.getMany({ provider: 'MISSING_SERVICE', isOptional: true });
-
-    expect(missingService).toBe(undefined);
-  });
-
-  it('should throw when a module tries to import the `AppModule`', () => {
-    expect(() => new ProviderModule({ identifier: Symbol(0), imports: [AppModule] })).toThrow(
-      InjectionProviderModuleError
-    );
-  });
-
-  it('should correctly import exported providers from a module using dynamic exports', () => {
-    expect(EmptyModule_ImportingModuleWithDynamicExports_NoExports.get(EmptyService) instanceof EmptyService).toBe(
-      true
-    );
-
-    // The `PaymentService` provider is being not dynamically exported.
-    expect(() => EmptyModule_ImportingModuleWithDynamicExports_NoExports.get(PaymentService)).toThrow();
-  });
-
-  it('should throw when importing a module having a dynamic exports with providers/modules out of the declared range of the static exports', () => {
-    const m = new ProviderModule({
-      identifier: Symbol(0),
-      providers: [EmptyService],
-      exports: [EmptyService],
-      dynamicExports: () => {
-        return [EmptyService, EmptyService];
-      },
+    it('should have the `UserService` bound', () => {
+      expect(AppModule.__isCurrentBound(LoggerService)).toBe(true);
     });
 
-    expect(() => new ProviderModule({ identifier: Symbol(0), imports: [m] })).toThrow(
-      InjectionDynamicExportsOutOfRange
-    );
-  });
+    it('should throw error if `register` is invoked more than once per app life-cycle', () => {
+      expect(() => AppModule.register({})).toThrow(InjectionError);
+    });
 
-  it('should successfully create a clone', () => {
-    const m = TransientModule_ImportsSingletonModule_WithExports.clone();
-
-    expect(m).not.toBe(TransientModule_ImportsSingletonModule_WithExports);
-    expect(m.get(EmptyService)).toBe(m.get(EmptyService));
-    expect(m.get('TRANSIENT_EMPTY_SERVICE')).not.toBe(m.get('TRANSIENT_EMPTY_SERVICE'));
-  });
-
-  describe('Dispose Event', () => {
-    afterEach(() => jest.clearAllMocks());
-
-    const MODULE_OPTIONS: ProviderModuleOptions = {
-      identifier: Symbol(0),
-      providers: [{ provide: 'FAKE_SERVICE', useValue: 0 }],
-      onDispose: async (module) => {
-        expect(module.toNaked().container instanceof Container).toBe(true);
-      },
-    };
-
-    it('should correctly dispose the module', async () => {
+    it('should be able to re-invoke `register` after a dispose process', async () => {
       let onDisposeCbInvoked = false;
-
-      const m = new ProviderModule({
-        ...MODULE_OPTIONS,
-        onDispose: async (module) => {
+      const MODULE_OPTIONS = ProviderModuleHelpers.buildInternalConstructorParams({
+        identifier: Symbol(0),
+        container: () => new Container(),
+        onDispose: async () => {
           onDisposeCbInvoked = true;
-
-          MODULE_OPTIONS.onDispose!(module);
         },
-      }).toNaked();
+      });
 
-      expect(m.get('FAKE_SERVICE')).toBe(0);
+      const m = new GlobalAppModule().register<true>(MODULE_OPTIONS);
 
       await m._dispose();
 
       expect(onDisposeCbInvoked).toBe(true);
-      expect(m.container).toBe(null);
-      expect(() => m._getImportedModules()).toThrow(InjectionProviderModuleDisposedError);
-      expect(() => m._getProviders()).toThrow(InjectionProviderModuleDisposedError);
-      expect(() => m._getExportableModulesAndProviders()).toThrow(InjectionProviderModuleDisposedError);
-      expect(m.dynamicExports).toBe(null);
+      expect((m as any)['isLoaded']).toBe(false);
+
+      (m as unknown as GlobalAppModule).register(MODULE_OPTIONS);
+
+      expect((m as any)['isLoaded']).toBe(true);
     });
 
-    it('should be able to re-initialize it after the `_dispose` method', async () => {
-      const m = new ProviderModule(MODULE_OPTIONS).toNaked();
-      await m._dispose();
+    it('should correctly invoke the `LoggerService.log` method', () => {
+      const loggerService = AppModule.get(LoggerService);
+      const logSpy = jest.spyOn(console, 'log');
+      const logMessage = '04/05/2025-sad';
 
-      m._lazyInit(MODULE_OPTIONS);
+      loggerService.log(logMessage);
 
-      expect(m.__isCurrentBound('FAKE_SERVICE')).toBe(true);
-      expect(Array.isArray(m._getProviders())).toBe(true);
+      expect(logSpy).toHaveBeenCalledWith(`[Logger]: ${logMessage}`);
+    });
+
+    describe('Inheritance', () => {
+      afterEach(() => jest.clearAllMocks());
+
+      it('should resolve the `LoggerService` from the `AppModule`', () => {
+        expect(EmptyModule.get(LoggerService) instanceof LoggerService).toBe(true);
+      });
+
+      it('should be the same `LoggerService` instance as the one from the `AppModule`', () => {
+        expect(EmptyModule.get(LoggerService)).toBe(AppModule.get(LoggerService));
+      });
+
+      it('should globally inherit nested providers from imported modules from `AppModule`', () => {
+        const MockedAppModule = new GlobalAppModule();
+        //@ts-expect-error The `m4` module is marked as globally, therefore must be available in the app module when being created.
+        MockedAppModule.toNaked().imports = [new ProviderModule({ identifier: Symbol(4) })];
+
+        const m0 = new ProviderModule({
+          identifier: Symbol(0),
+          providers: [TransientDecoratedService],
+          exports: [TransientDecoratedService],
+        });
+        const m1 = new ProviderModule({ identifier: Symbol(1), imports: [m0], exports: [m0] });
+        const m2 = new ProviderModule({ identifier: Symbol(2), imports: [m1], exports: [m1] });
+        const m3 = new ProviderModule({ identifier: Symbol(3), imports: [m2], exports: [m2] });
+        const m4 = new ProviderModule(
+          ProviderModuleHelpers.buildInternalConstructorParams({
+            appModule: () => MockedAppModule,
+            identifier: Symbol(4),
+            markAsGlobal: true,
+            imports: [m3],
+            exports: [m3],
+          })
+        );
+
+        MockedAppModule.register<true>({
+          imports: [m4],
+        });
+
+        const m5 = new ProviderModule({ identifier: Symbol(5) });
+
+        expect(m5.get(TransientDecoratedService) instanceof TransientDecoratedService).toBe(true);
+        expect(m5.get(TransientDecoratedService)).not.toBe(m5.get(TransientDecoratedService));
+      });
+    });
+  });
+
+  describe('ProviderModule', () => {
+    afterEach(() => jest.clearAllMocks());
+
+    it('should throw if no identifier provided', () => {
+      expect(() => new ProviderModule({} as any)).toThrow(InjectionProviderModuleMissingIdentifierError);
+    });
+
+    it('should correctly initialize with custom `Container`', () => {
+      const container = new Container();
+      const m = new ProviderModule(
+        ProviderModuleHelpers.buildInternalConstructorParams({ identifier: Symbol(0), container: () => container })
+      ).toNaked();
+
+      expect(container).toBe(m.container);
+    });
+
+    it('should correctly overwrite internal container `Container` with `_overwriteContainer` method', () => {
+      const container = new Container();
+      const m = new ProviderModule({ identifier: Symbol(0) }).toNaked();
+      m._overwriteContainer(() => container);
+
+      expect(container).toBe(m.container);
+    });
+
+    it('should resolve many at once', () => {
+      const [loggerService, userService] = AppModule.getMany<[typeof LoggerService, typeof UserService]>(
+        LoggerService,
+        'USER_SERVICE'
+      );
+
+      expect(loggerService instanceof LoggerService).toBe(true);
+      expect(userService instanceof UserService).toBe(true);
+    });
+
+    it('should resolve many at once with optional provider', () => {
+      const [missingService] = AppModule.getMany({ provider: 'MISSING_SERVICE', isOptional: true });
+
+      expect(missingService).toBe(undefined);
+    });
+
+    it('should throw when a module tries to import the `AppModule`', () => {
+      expect(() => new ProviderModule({ identifier: Symbol(0), imports: [AppModule] })).toThrow(
+        InjectionProviderModuleError
+      );
+    });
+
+    it('should correctly import exported providers from a module using dynamic exports', () => {
+      expect(EmptyModule_ImportingModuleWithDynamicExports_NoExports.get(EmptyService) instanceof EmptyService).toBe(
+        true
+      );
+
+      // The `PaymentService` provider is being not dynamically exported.
+      expect(() => EmptyModule_ImportingModuleWithDynamicExports_NoExports.get(PaymentService)).toThrow();
+    });
+
+    it('should throw when importing a module having a dynamic exports with providers/modules out of the declared range of the static exports', () => {
+      const m = new ProviderModule({
+        identifier: Symbol(0),
+        providers: [EmptyService],
+        exports: [EmptyService],
+        dynamicExports: () => {
+          return [EmptyService, EmptyService];
+        },
+      });
+
+      expect(() => new ProviderModule({ identifier: Symbol(0), imports: [m] })).toThrow(
+        InjectionDynamicExportsOutOfRange
+      );
+    });
+
+    it('should successfully create a clone', () => {
+      const m = TransientModule_ImportsSingletonModule_WithExports.clone();
+
+      expect(m).not.toBe(TransientModule_ImportsSingletonModule_WithExports);
+      expect(m.get(EmptyService)).toBe(m.get(EmptyService));
+      expect(m.get('TRANSIENT_EMPTY_SERVICE')).not.toBe(m.get('TRANSIENT_EMPTY_SERVICE'));
+    });
+
+    describe('Dispose Event', () => {
+      afterEach(() => jest.clearAllMocks());
+
+      const MODULE_OPTIONS: ProviderModuleOptions = {
+        identifier: Symbol(0),
+        providers: [{ provide: 'FAKE_SERVICE', useValue: 0 }],
+        onDispose: async (module) => {
+          expect(module.toNaked().container instanceof Container).toBe(true);
+        },
+      };
+
+      it('should correctly dispose the module', async () => {
+        let onDisposeCbInvoked = false;
+
+        const m = new ProviderModule({
+          ...MODULE_OPTIONS,
+          onDispose: async (module) => {
+            onDisposeCbInvoked = true;
+
+            MODULE_OPTIONS.onDispose!(module);
+          },
+        }).toNaked();
+
+        expect(m.get('FAKE_SERVICE')).toBe(0);
+
+        await m._dispose();
+
+        expect(onDisposeCbInvoked).toBe(true);
+        expect(m.container).toBe(null);
+        expect(() => m._getImportedModules()).toThrow(InjectionProviderModuleDisposedError);
+        expect(() => m._getProviders()).toThrow(InjectionProviderModuleDisposedError);
+        expect(() => m._getExportableModulesAndProviders()).toThrow(InjectionProviderModuleDisposedError);
+        expect(m.dynamicExports).toBe(null);
+      });
+
+      it('should be able to re-initialize it after the `_dispose` method', async () => {
+        const m = new ProviderModule(MODULE_OPTIONS).toNaked();
+        await m._dispose();
+
+        m._lazyInit(MODULE_OPTIONS);
+
+        expect(m.__isCurrentBound('FAKE_SERVICE')).toBe(true);
+        expect(Array.isArray(m._getProviders())).toBe(true);
+      });
     });
   });
 });

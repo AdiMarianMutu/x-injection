@@ -91,6 +91,7 @@ import { GlobalContainer } from './global-container';
  */
 export class ProviderModule implements IProviderModule {
   readonly identifier: symbol;
+  readonly isMarkedAsGlobal: boolean = false;
   readonly isDisposed: boolean = false;
 
   protected readonly isAppModule: boolean;
@@ -114,6 +115,7 @@ export class ProviderModule implements IProviderModule {
     providers,
     exports,
     defaultScope,
+    markAsGlobal,
     dynamicExports,
     onReady,
     onDispose,
@@ -132,6 +134,7 @@ export class ProviderModule implements IProviderModule {
     if (this.isAppModule) return;
 
     this._lazyInit({
+      markAsGlobal,
       imports,
       providers,
       exports,
@@ -280,7 +283,32 @@ export class ProviderModule implements IProviderModule {
   }
 
   private injectProviders(): void {
-    this.providers.forEach((provider) => this.moduleUtils.bindToContainer(provider, this.defaultScope.native));
+    this.providers.forEach((provider) => {
+      const serviceIdentifier = ProviderTokenHelpers.toServiceIdentifier(provider);
+      const isGloballyImportedIntoAppModule = GlobalContainer.isCurrentBound(serviceIdentifier);
+      const useProviderFromAppModuleInstead = isGloballyImportedIntoAppModule && this.exports.includes(provider);
+
+      if (!useProviderFromAppModuleInstead) {
+        this.moduleUtils.bindToContainer(provider, this.defaultScope.native);
+
+        return;
+      }
+
+      // If we reached this point it means
+      // that this specific module has been imported into the `AppModule`
+      // therefore we must be sure to acx
+
+      const providerOptions = ProviderTokenHelpers.tryGetProviderOptions(provider) ?? ({} as any);
+      delete providerOptions['useClass'];
+      delete providerOptions['useValue'];
+
+      const _provider = {
+        ...providerOptions,
+        useFactory: () => GlobalContainer.get(serviceIdentifier),
+      };
+
+      this.moduleUtils.bindToContainer(_provider, this.defaultScope.native);
+    });
   }
 
   private registerBindingSideEffect(
@@ -386,6 +414,7 @@ export class ProviderModule implements IProviderModule {
    * See {@link IProviderModuleNaked._lazyInit}.
    */
   protected _lazyInit({
+    markAsGlobal,
     imports = [],
     providers = [],
     exports = [],
@@ -395,6 +424,8 @@ export class ProviderModule implements IProviderModule {
     onDispose,
     ..._internalParams
   }: LazyInitOptions): IProviderModule {
+    //@ts-expect-error Read-only property.
+    this.isMarkedAsGlobal = markAsGlobal ?? false;
     //@ts-expect-error Read-only property.
     this.isDisposed = false;
     //@ts-expect-error Read-only property.
@@ -419,7 +450,7 @@ export class ProviderModule implements IProviderModule {
     //@ts-expect-error Read-only property.
     this.container = this.prepareContainer({ ..._internalParams });
     //@ts-expect-error Read-only property.
-    this.moduleUtils = new ProviderModuleUtils(this);
+    this.moduleUtils = new ProviderModuleUtils(this, _internalParams);
     //@ts-expect-error Read-only property.
     this.registeredBindingSideEffects = new Map();
 

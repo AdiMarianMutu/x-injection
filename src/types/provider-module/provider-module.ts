@@ -2,11 +2,15 @@ import type { BindingActivation, BindingDeactivation } from 'inversify';
 
 import type { DependencyProvider, ProviderIdentifier, ProviderToken } from '../provider-token';
 import type { IProviderModuleNaked } from './provider-module-naked';
-import { ProviderModuleOptionsInternal } from './provider-module-options';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { ProviderModuleOptions, ProviderModuleOptionsInternal } from './provider-module-options';
 
 export interface IProviderModule {
   /** The module unique ID. */
   readonly identifier: symbol;
+
+  /** See {@link ProviderModuleOptions.markAsGlobal}. */
+  readonly isMarkedAsGlobal: boolean;
 
   readonly isDisposed: boolean;
 

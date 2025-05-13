@@ -283,32 +283,7 @@ export class ProviderModule implements IProviderModule {
   }
 
   private injectProviders(): void {
-    this.providers.forEach((provider) => {
-      const serviceIdentifier = ProviderTokenHelpers.toServiceIdentifier(provider);
-      const isGloballyImportedIntoAppModule = GlobalContainer.isCurrentBound(serviceIdentifier);
-      const useProviderFromAppModuleInstead = isGloballyImportedIntoAppModule && this.exports.includes(provider);
-
-      if (!useProviderFromAppModuleInstead) {
-        this.moduleUtils.bindToContainer(provider, this.defaultScope.native);
-
-        return;
-      }
-
-      // If we reached this point it means
-      // that this specific module has been imported into the `AppModule`
-      // therefore we must be sure to acx
-
-      const providerOptions = ProviderTokenHelpers.tryGetProviderOptions(provider) ?? ({} as any);
-      delete providerOptions['useClass'];
-      delete providerOptions['useValue'];
-
-      const _provider = {
-        ...providerOptions,
-        useFactory: () => GlobalContainer.get(serviceIdentifier),
-      };
-
-      this.moduleUtils.bindToContainer(_provider, this.defaultScope.native);
-    });
+    this.providers.forEach((provider) => this.moduleUtils.bindToContainer(provider, this.defaultScope.native));
   }
 
   private registerBindingSideEffect(

@@ -117,13 +117,14 @@ Now, `LoggerService` and `ConfigService` can be injected anywhere in your app, i
 You can also import entire modules into the `AppModule` like so:
 
 ```ts
+const SECRET_TOKEN_PROVIDER = { provide: 'SECRET_TOKEN', useValue: '123' };
+const SECRET_TOKEN_2_PROVIDER = { provide: 'SECRET_TOKEN_2', useValue: 123 };
+
 const ConfigModule = new ProviderModule({
   identifier: Symbol('ConfigModule'),
   markAsGlobal: true,
-  providers: [
-    { provide: 'SECRET_TOKEN', useValue: '123' },
-    { provide: 'SECRET_TOKEN_2', useValue: 123 },
-  ],
+  providers: [SECRET_TOKEN_PROVIDER, SECRET_TOKEN_2_PROVIDER],
+  exports: [SECRET_TOKEN_PROVIDER, SECRET_TOKEN_2_PROVIDER],
 });
 
 AppModule.register({

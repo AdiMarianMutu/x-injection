@@ -41,7 +41,7 @@ export interface ProviderModuleOptions {
    *
    * Defaults to `false`.
    */
-  markAsGlobal?: true;
+  markAsGlobal?: boolean;
 
   /**
    * When provided, can be used to control which providers from the {@link ProviderModuleOptions.exports | exports}

@@ -97,27 +97,48 @@ describe('Core', () => {
     expect(() => ParentModule.get(A)).toThrow();
   });
 
-  it('should throw an error when a `module` is marked as `global` and not imported into `AppModule`', () => {
-    new ProviderModule({
-      identifier: Symbol('HasGlobalMark'),
-      markAsGlobal: true,
+  describe('Global Mark', () => {
+    it('should throw an error when a `module` is marked as `global` and not imported into `AppModule`', () => {
+      new ProviderModule({
+        identifier: Symbol('HasGlobalMark'),
+        markAsGlobal: true,
+      });
+
+      expect(() => {
+        new GlobalAppModule().register({});
+      }).toThrow(InjectionProviderModuleGlobalMarkError);
     });
 
-    expect(() => {
-      new GlobalAppModule().register({});
-    }).toThrow(InjectionProviderModuleGlobalMarkError);
-  });
+    it('should throw an error when a `module` is NOT marked as `global` and imported into `AppModule`', () => {
+      expect(() => {
+        new GlobalAppModule().register({
+          imports: [
+            new ProviderModule({
+              identifier: Symbol('MissingGlobalMark'),
+            }),
+          ],
+        });
+      }).toThrow(InjectionProviderModuleGlobalMarkError);
+    });
 
-  it('should throw an error when a `module` is NOT marked as `global` and imported into `AppModule`', () => {
-    expect(() => {
-      new GlobalAppModule().register({
-        imports: [
-          new ProviderModule({
-            identifier: Symbol('MissingGlobalMark'),
-          }),
-        ],
+    it('should throw an error when a global marked `module` exports another module which has NOT been marked as `global`', () => {
+      const ChildrenModule = new ProviderModule({
+        identifier: Symbol('0'),
       });
-    }).toThrow(InjectionProviderModuleGlobalMarkError);
+
+      const ParentModule = new ProviderModule({
+        identifier: Symbol('HasGlobalMark'),
+        markAsGlobal: true,
+        imports: [ChildrenModule],
+        exports: [ChildrenModule],
+      });
+
+      expect(() => {
+        new GlobalAppModule().register({
+          imports: [ParentModule],
+        });
+      }).toThrow(InjectionProviderModuleGlobalMarkError);
+    });
   });
 
   describe('InjectionScope', () => {
@@ -462,12 +483,13 @@ describe('Core', () => {
 
         const m0 = new ProviderModule({
           identifier: Symbol(0),
+          markAsGlobal: true,
           providers: [TransientDecoratedService],
           exports: [TransientDecoratedService],
         });
-        const m1 = new ProviderModule({ identifier: Symbol(1), imports: [m0], exports: [m0] });
-        const m2 = new ProviderModule({ identifier: Symbol(2), imports: [m1], exports: [m1] });
-        const m3 = new ProviderModule({ identifier: Symbol(3), imports: [m2], exports: [m2] });
+        const m1 = new ProviderModule({ identifier: Symbol(1), markAsGlobal: true, imports: [m0], exports: [m0] });
+        const m2 = new ProviderModule({ identifier: Symbol(2), markAsGlobal: true, imports: [m1], exports: [m1] });
+        const m3 = new ProviderModule({ identifier: Symbol(3), markAsGlobal: true, imports: [m2], exports: [m2] });
         const m4 = new ProviderModule(
           ProviderModuleHelpers.buildInternalConstructorParams({
             appModule: () => MockedAppModule,

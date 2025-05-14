@@ -11,8 +11,6 @@ import { ProviderModule } from './provider-module';
  * **You shouldn't initialize a new instance of this class, please use the {@link AppModule} instance!**
  */
 export class GlobalAppModule extends ProviderModule implements IAppModule {
-  override isMarkedAsGlobal = true;
-
   private nakedModule = this as unknown as IProviderModuleNaked;
   private isLoaded = false;
 

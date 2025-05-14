@@ -10,6 +10,7 @@ import {
   ProviderModuleOptions,
   ProviderTokenHelpers,
 } from '../src';
+import { GlobalModuleRegister } from '../src/core';
 import {
   InjectionDynamicExportsOutOfRange,
   InjectionProviderModuleDisposedError,
@@ -46,7 +47,11 @@ import {
 } from './setup';
 
 describe('Core', () => {
-  afterEach(() => jest.clearAllMocks());
+  afterEach(() => {
+    jest.clearAllMocks();
+
+    GlobalModuleRegister.clear();
+  });
 
   it('should resolve a singleton dependency', () => {
     // Scenario where the dep. should be available at least in the module context.
@@ -93,11 +98,13 @@ describe('Core', () => {
   });
 
   it('should throw an error when a `module` is marked as `global` and not imported into `AppModule`', () => {
+    new ProviderModule({
+      identifier: Symbol('HasGlobalMark'),
+      markAsGlobal: true,
+    });
+
     expect(() => {
-      new ProviderModule({
-        identifier: Symbol('HasGlobalMark'),
-        markAsGlobal: true,
-      });
+      new GlobalAppModule().register({});
     }).toThrow(InjectionProviderModuleGlobalMarkError);
   });
 

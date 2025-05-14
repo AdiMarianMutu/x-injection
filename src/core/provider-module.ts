@@ -186,6 +186,7 @@ export class ProviderModule implements IProviderModule {
     return new ProviderModule(
       ProviderModuleHelpers.buildInternalConstructorParams({
         isAppModule: this.isAppModule,
+        markAsGlobal: this.isMarkedAsGlobal,
         identifier: this.identifier,
         defaultScope: this.defaultScope.native,
         dynamicExports: this.dynamicExports,

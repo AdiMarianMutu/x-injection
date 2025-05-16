@@ -47,7 +47,7 @@ export interface IProviderModuleNaked extends IProviderModule {
   readonly exports: StaticExports;
 
   /** What is exported into this module. */
-  readonly imports: IProviderModuleNaked[];
+  readonly imports: (IProviderModuleNaked | (() => IProviderModuleNaked))[];
 
   /** The module dynamic exports method. */
   readonly dynamicExports: DynamicExports | undefined;

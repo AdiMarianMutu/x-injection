@@ -221,13 +221,16 @@ export class ProviderModule implements IProviderModule {
     }
   }
 
-  private injectImportedModules(modules?: IProviderModuleNaked[]): void {
+  private injectImportedModules(modules?: (IProviderModuleNaked | (() => IProviderModuleNaked))[]): void {
     if (!modules || modules.length === 0) return;
 
     modules.forEach((module) => {
       if (module.toString() === 'GlobalAppModule') {
         throw new InjectionProviderModuleError(this, `The 'GlobalAppModule' can't be imported!`);
       }
+
+      // The current iteration may actually be a lazy module.
+      module = typeof module === 'function' ? module() : module;
 
       const moduleStaticExports = module._getExportableModulesAndProviders();
       const moduleDynamicExports = module.dynamicExports?.(this, moduleStaticExports);
@@ -439,7 +442,7 @@ export class ProviderModule implements IProviderModule {
    *
    * See {@link IProviderModuleNaked._getImportedModules}.
    */
-  protected _getImportedModules(): IProviderModuleNaked[] {
+  protected _getImportedModules(): (IProviderModuleNaked | (() => IProviderModuleNaked))[] {
     this.shouldThrowIfDisposed();
 
     return this.imports;

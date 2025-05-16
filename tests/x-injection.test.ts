@@ -206,10 +206,10 @@ describe('Core', () => {
             ProviderTokenHelpers.toDependencyProviderWithOptions(provider, { scope: InjectionScope.Singleton })
           ),
 
-        importedProvidersMap: (_, provider) =>
-          ProviderTokenHelpers.toDependencyProviderWithOptions(provider, {
-            scope: InjectionScope.Singleton,
-          }),
+          importedProvidersMap: (_, provider) =>
+            ProviderTokenHelpers.toDependencyProviderWithOptions(provider, {
+              scope: InjectionScope.Singleton,
+            }),
         })
       );
 
@@ -592,6 +592,20 @@ describe('Core', () => {
       expect(m).not.toBe(TransientModule_ImportsSingletonModule_WithExports);
       expect(m.get(EmptyService)).toBe(m.get(EmptyService));
       expect(m.get('TRANSIENT_EMPTY_SERVICE')).not.toBe(m.get('TRANSIENT_EMPTY_SERVICE'));
+    });
+
+    it('should successfully import a lazy cloned module', () => {
+      const Base = new ProviderModule({
+        identifier: Symbol('Base'),
+        imports: [() => SingletonModule_WithExports.clone()],
+        providers: [PaymentService],
+      });
+
+      const C0 = Base.clone();
+      const C1 = Base.clone();
+
+      expect(C0.get(PaymentService)).not.toBe(C1.get(PaymentService));
+      expect(C0.get(EmptyService)).not.toBe(C1.get(EmptyService));
     });
 
     describe('Dispose Event', () => {

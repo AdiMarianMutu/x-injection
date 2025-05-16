@@ -10,7 +10,7 @@ export interface ProviderModuleOptions {
   identifier: symbol;
 
   /** The list of imported {@link IProviderModule | modules} that export the {@link Provider | providers} which are required in this module. */
-  imports?: IProviderModule[];
+  imports?: (IProviderModule | (() => IProviderModule))[];
 
   /** The {@link DependencyProvider | providers} that will be instantiated by the container and that may be shared at least across this module. */
   providers?: DependencyProvider[];

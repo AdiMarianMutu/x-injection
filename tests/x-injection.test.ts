@@ -12,7 +12,6 @@ import {
 } from '../src';
 import { GlobalModuleRegister } from '../src/core';
 import {
-  InjectionDynamicExportsOutOfRange,
   InjectionProviderModuleDisposedError,
   InjectionProviderModuleGlobalMarkError,
   InjectionProviderModuleMissingIdentifierError,
@@ -569,21 +568,6 @@ describe('Core', () => {
 
       // The `PaymentService` provider is being not dynamically exported.
       expect(() => EmptyModule_ImportingModuleWithDynamicExports_NoExports.get(PaymentService)).toThrow();
-    });
-
-    it('should throw when importing a module having a dynamic exports with providers/modules out of the declared range of the static exports', () => {
-      const m = new ProviderModule({
-        identifier: Symbol(0),
-        providers: [EmptyService],
-        exports: [EmptyService],
-        dynamicExports: () => {
-          return [EmptyService, EmptyService];
-        },
-      });
-
-      expect(() => new ProviderModule({ identifier: Symbol(0), imports: [m] })).toThrow(
-        InjectionDynamicExportsOutOfRange
-      );
     });
 
     it('should successfully create a clone', () => {

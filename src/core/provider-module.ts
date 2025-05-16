@@ -9,7 +9,6 @@ import {
 
 import { InjectionScope } from '../enums';
 import {
-  InjectionDynamicExportsOutOfRange,
   InjectionProviderModuleDisposedError,
   InjectionProviderModuleError,
   InjectionProviderModuleMissingIdentifierError,
@@ -257,15 +256,6 @@ export class ProviderModule implements IProviderModule {
 
       const moduleStaticExports = module._getExportableModulesAndProviders();
       const moduleDynamicExports = module.dynamicExports?.(this, moduleStaticExports);
-      const moduleHasDynamicExports = moduleDynamicExports !== undefined;
-
-      if (moduleHasDynamicExports) {
-        this.shouldThrowWhenModuleDynamicExportsDontMatchTheStaticExports(
-          module,
-          moduleStaticExports,
-          moduleDynamicExports
-        );
-      }
 
       (moduleDynamicExports ?? moduleStaticExports).forEach((exportable) => {
         if (exportable instanceof ProviderModule) {
@@ -355,19 +345,6 @@ export class ProviderModule implements IProviderModule {
 
     this.registeredBindingSideEffects.get(provider)?.onUnbindEffects.forEach((cb) => cb());
     this.registeredBindingSideEffects.delete(provider);
-  }
-
-  private shouldThrowWhenModuleDynamicExportsDontMatchTheStaticExports(
-    module: IProviderModuleNaked,
-    staticExports: StaticExports,
-    dynamicExports: StaticExports
-  ): void {
-    if (
-      dynamicExports.length > staticExports.length ||
-      dynamicExports.some((dynamicExport) => !staticExports.includes(dynamicExport))
-    ) {
-      throw new InjectionDynamicExportsOutOfRange(module);
-    }
   }
 
   private shouldThrowIfDisposed(): void {

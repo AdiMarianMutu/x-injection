@@ -356,12 +356,6 @@ const CatModule = new ProviderModule({
 
 Hopefully the provided example shows how powerful the `dynamicExports` property it is, but, there are some things to keep in mind in order to avoid nasty bugs!
 
-1. You **must always** return only the providers/modules declared into the static `exports` array.
-2. You **can** return _less_ providers/modules as long as they are still part of the static `exports` array.
-3. You **cannot** return _more_ providers/modules than the static `exports` array!
-
-> When point number `1` and point number `3` are triggered, the library will throw a descriptive error which should help to find the culprit module.
-
 ## Advanced Usage
 
 Each `ProviderModule` instance implements the `IProviderModule` interface for simplicity, but can be cast to `IProviderModuleNaked` for advanced operations:

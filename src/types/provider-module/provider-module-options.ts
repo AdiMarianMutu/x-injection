@@ -50,11 +50,6 @@ export interface ProviderModuleOptions {
    * **Note:** _Static {@link ProviderModuleOptions.exports | exports} should always be preferred as their static nature implies predictibility._
    * _This is for advanced use cases only, and most probably you may never need to use a dynamic export!_
    *
-   * To keep in mind in order to avoid nasty bugs:
-   * - You **must always** return only the providers/modules declared into the static {@link ProviderModuleOptions.exports | exports} array.
-   * - You **can** return _less_ providers/modules as long as they are still part of the static {@link ProviderModuleOptions.exports | exports} array.
-   * - You **cannot** return _more_ providers/modules than the static {@link ProviderModuleOptions.exports | exports} array!
-   *
    * @example
    * ```ts
    * {

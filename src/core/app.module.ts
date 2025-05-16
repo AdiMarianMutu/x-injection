@@ -44,10 +44,10 @@ export class GlobalAppModule extends ProviderModule implements IAppModule {
     return super.toNaked() as any;
   }
 
-  protected override async _dispose(): Promise<void> {
+  override async dispose(): Promise<void> {
     this.isLoaded = false;
 
-    super._dispose();
+    super.dispose();
   }
 
   private checkIfRegisteredModulesHaveGlobalMark(

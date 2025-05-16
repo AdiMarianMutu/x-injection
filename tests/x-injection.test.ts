@@ -449,7 +449,7 @@ describe('Core', () => {
 
       const m = new GlobalAppModule().register<true>(MODULE_OPTIONS);
 
-      await m._dispose();
+      await m.dispose();
 
       expect(onDisposeCbInvoked).toBe(true);
       expect((m as any)['isLoaded']).toBe(false);
@@ -633,7 +633,7 @@ describe('Core', () => {
 
         expect(m.get('FAKE_SERVICE')).toBe(0);
 
-        await m._dispose();
+        await m.dispose();
 
         expect(onDisposeCbInvoked).toBe(true);
         expect(m.container).toBe(null);
@@ -643,9 +643,9 @@ describe('Core', () => {
         expect(m.dynamicExports).toBe(null);
       });
 
-      it('should be able to re-initialize it after the `_dispose` method', async () => {
+      it('should be able to re-initialize it after the `dispose` method', async () => {
         const m = new ProviderModule(MODULE_OPTIONS).toNaked();
-        await m._dispose();
+        await m.dispose();
 
         m._lazyInit(MODULE_OPTIONS);
 

@@ -196,6 +196,29 @@ export class ProviderModule implements IProviderModule {
     );
   }
 
+  async dispose(): Promise<void> {
+    await this.onDispose?.(this);
+    await this.__unbindAll();
+
+    //@ts-expect-error Read-only property.
+    this.container = null;
+    //@ts-expect-error Read-only property.
+    this.imports = null;
+    //@ts-expect-error Read-only property.
+    this.providers = null;
+    //@ts-expect-error Read-only property.
+    this.importedProviders = null;
+    //@ts-expect-error Read-only property.
+    this.exports = null;
+    //@ts-expect-error Read-only property.
+    this.dynamicExports = null;
+    //@ts-expect-error Read-only property.
+    this.registeredBindingSideEffects = null;
+
+    //@ts-expect-error Read-only property.
+    this.isDisposed = true;
+  }
+
   toString(): string {
     return this.identifier?.description ?? 'Unknown';
   }
@@ -354,34 +377,6 @@ export class ProviderModule implements IProviderModule {
   }
 
   //#region IProviderModuleNaked methods
-
-  /**
-   * **Publicly visible when the instance is casted to {@link IProviderModuleNaked}.**
-   *
-   * See {@link IProviderModuleNaked._dispose}.
-   */
-  protected async _dispose(): Promise<void> {
-    await this.onDispose?.(this);
-    await this.__unbindAll();
-
-    //@ts-expect-error Read-only property.
-    this.container = null;
-    //@ts-expect-error Read-only property.
-    this.imports = null;
-    //@ts-expect-error Read-only property.
-    this.providers = null;
-    //@ts-expect-error Read-only property.
-    this.importedProviders = null;
-    //@ts-expect-error Read-only property.
-    this.exports = null;
-    //@ts-expect-error Read-only property.
-    this.dynamicExports = null;
-    //@ts-expect-error Read-only property.
-    this.registeredBindingSideEffects = null;
-
-    //@ts-expect-error Read-only property.
-    this.isDisposed = true;
-  }
 
   /**
    * **Publicly visible when the instance is casted to {@link IProviderModuleNaked}.**

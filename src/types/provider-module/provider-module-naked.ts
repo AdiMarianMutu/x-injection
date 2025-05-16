@@ -112,20 +112,6 @@ export interface IProviderModuleNaked extends IProviderModule {
    */
   _overwriteContainer(cb: () => Container): void;
 
-  /**
-   * Removes all the bindings from the {@link IProviderModuleNaked.container | container}.
-   *
-   * Then also sets to `null` these properties:
-   * - `container`
-   * - `imports`
-   * - `providers`
-   * - `exports`
-   * - `dynamicExports`
-   *
-   * **Note:** The module can be fully re-initialized by invoking the {@link _lazyInit} method.
-   */
-  _dispose(): Promise<void>;
-
   //#region InversifyJS Container native methods
 
   /**

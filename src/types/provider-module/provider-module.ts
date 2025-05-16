@@ -80,6 +80,13 @@ export interface IProviderModule {
    */
   clone(options?: Partial<ProviderModuleOptions>): IProviderModule;
 
+  /**
+   * Removes all the bindings from the {@link IProviderModuleNaked.container | container}.
+   *
+   * **Note:** The module can be fully re-initialized by invoking the {@link _lazyInit} method.
+   */
+  dispose(): Promise<void>;
+
   /** Returns the {@link IProviderModule.identifier} `symbol` description. */
   toString(): string;
 }

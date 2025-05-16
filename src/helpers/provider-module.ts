@@ -2,7 +2,7 @@ import type { DynamicExports, ProviderModuleOptions, ProviderModuleOptionsIntern
 
 export namespace ProviderModuleHelpers {
   export function buildInternalConstructorParams(
-    params: ProviderModuleOptions & ProviderModuleOptionsInternal
+    params: Partial<ProviderModuleOptions & ProviderModuleOptionsInternal>
   ): ProviderModuleOptions {
     return params as ProviderModuleOptions;
   }

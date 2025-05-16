@@ -200,14 +200,18 @@ describe('Core', () => {
         providers: [{ provide: EmptyService, useClass: EmptyService, scope: InjectionScope.Request }],
       });
 
-      const m = RequestModule.clone({
-        providersMap: (provider) =>
-          ProviderTokenHelpers.toDependencyProviderWithOptions(provider, { scope: InjectionScope.Singleton }),
+      const m = RequestModule.clone(
+        ProviderModuleHelpers.buildInternalConstructorParams({
+          providers: RequestModule.toNaked().providers.map((provider) =>
+            ProviderTokenHelpers.toDependencyProviderWithOptions(provider, { scope: InjectionScope.Singleton })
+          ),
+
         importedProvidersMap: (_, provider) =>
           ProviderTokenHelpers.toDependencyProviderWithOptions(provider, {
             scope: InjectionScope.Singleton,
           }),
-      });
+        })
+      );
 
       expect(m.get(InnerService).baseService).toBe(m.get(BaseService));
       expect(m.get(EmptyService)).toBe(m.get(EmptyService));

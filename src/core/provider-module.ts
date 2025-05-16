@@ -16,7 +16,6 @@ import {
 } from '../errors';
 import { injectionScopeToBindingScope, isPlainObject, ProviderModuleHelpers, ProviderTokenHelpers } from '../helpers';
 import type {
-  CloneParams,
   DependencyProvider,
   IProviderModule,
   IProviderModuleNaked,
@@ -176,12 +175,8 @@ export class ProviderModule implements IProviderModule {
     return this as any;
   }
 
-  clone(options?: CloneParams): IProviderModule {
-    let providers = [...this.providers];
-
-    if (options?.providersMap) {
-      providers = providers.map((provider) => options.providersMap!(provider, this));
-    }
+  clone(options?: Partial<ProviderModuleOptions>): IProviderModule {
+    const _options = options as ProviderModuleOptionsInternal;
 
     return new ProviderModule(
       ProviderModuleHelpers.buildInternalConstructorParams({
@@ -192,10 +187,11 @@ export class ProviderModule implements IProviderModule {
         dynamicExports: this.dynamicExports,
         onReady: this.onReady,
         onDispose: this.onDispose,
-        importedProvidersMap: options?.importedProvidersMap,
+        importedProvidersMap: this.importedProvidersMap,
         imports: [...this.imports],
-        providers,
+        providers: [...this.providers],
         exports: [...this.exports],
+        ..._options,
       })
     );
   }

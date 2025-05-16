@@ -27,5 +27,4 @@ export type {
   ProviderScopeOption,
   LazyInitOptions,
   OnEvent,
-  CloneParams,
 } from './types';

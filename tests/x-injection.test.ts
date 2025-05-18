@@ -343,33 +343,6 @@ describe('Core', () => {
   describe('Events', () => {
     afterEach(() => jest.clearAllMocks());
 
-    it('should invoke the `activation` event', () => {
-      const cb = jest.fn();
-
-      TransientModule_NoExports.onActivationEvent(EmptyService, (ctx) => {
-        cb();
-
-        return new EmptyService();
-      });
-
-      TransientModule_NoExports.get(EmptyService);
-
-      expect(cb).toHaveBeenCalled();
-    });
-
-    it('should invoke the `deactivation` event', async () => {
-      const cb = jest.fn();
-      SingletonModule_NoExports.__takeSnapshot();
-
-      SingletonModule_NoExports.onDeactivationEvent(EmptyService, cb);
-
-      await SingletonModule_NoExports.__unbind(EmptyService);
-
-      SingletonModule_NoExports.__restoreSnapshot();
-
-      expect(cb).toHaveBeenCalled();
-    });
-
     it('should invoke all onBind registered side effects', () => {
       const cb = jest.fn();
 
@@ -377,7 +350,29 @@ describe('Core', () => {
 
       EmptyModule.__bind(EmptyService);
 
+      EmptyModule.__unbind(EmptyService);
+
       expect(cb).toHaveBeenCalled();
+    });
+
+    it('should invoke all onGet registered side effects', () => {
+      const cbOnce = jest.fn();
+      const cbMultiple = jest.fn();
+      const multiple = 4;
+
+      TransientModule_NoExports._onGet(EmptyService, true, cbOnce);
+      TransientModule_NoExports._onGet(EmptyService, false, cbMultiple);
+
+      [...new Array(multiple)].forEach(() => TransientModule_NoExports.get(EmptyService));
+
+      expect(cbOnce).toHaveBeenCalledTimes(1);
+      expect(cbMultiple).toHaveBeenCalledTimes(multiple);
+    });
+
+    it('should throw when the `once` param has not been provided to the onGet method', () => {
+      expect(() => TransientModule_NoExports._onGet(EmptyService, undefined as any, () => {})).toThrow(
+        InjectionProviderModuleError
+      );
     });
 
     it('should invoke all onRebind registered side effects', async () => {
@@ -413,6 +408,17 @@ describe('Core', () => {
       await m.__unbindAll();
 
       expect(cb).toHaveBeenCalledTimes(2);
+    });
+
+    it('should correctly clone the registered side effects', () => {
+      const cb = jest.fn();
+      const cloned = TransientModule_NoExports.clone();
+
+      TransientModule_NoExports._onGet(EmptyService, true, cb);
+
+      cloned.get(EmptyService);
+
+      expect(cb).toHaveBeenCalledTimes(1);
     });
   });
 

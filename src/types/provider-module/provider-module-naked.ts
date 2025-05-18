@@ -61,6 +61,8 @@ export interface IProviderModuleNaked extends IProviderModule {
   /** Can be used to override all the _imported_ providers _before_ the binding process. */
   readonly importedProvidersMap: ProviderModuleOptionsInternal['importedProvidersMap'];
 
+  readonly registeredBindingSideEffects: RegisteredBindingSideEffects;
+
   /** It'll _completely_ re-init the `module` with the provided {@link LazyInitOptions | options}. */
   _lazyInit(options: LazyInitOptions): IProviderModule;
 
@@ -77,12 +79,20 @@ export interface IProviderModuleNaked extends IProviderModule {
    * Can be used to execute the provided {@link cb | callback} whenever a _new_ {@link https://inversify.io/docs/fundamentals/binding/ | binding}
    * is registered for the {@link provider}.
    *
-   * **Note:** _This is not the same as the {@link onActivationEvent}!_
-   *
    * @param provider The {@link ProviderToken}.
    * @param cb The `callback` to be invoked.
    */
   _onBind<T>(provider: ProviderToken<T>, cb: () => Promise<void> | void): void;
+
+  /**
+   * Can be used to execute the provided {@link cb | callback} whenever the
+   * {@link IProviderModule.get | get} method is invoked.
+   *
+   * @param provider The {@link ProviderToken}.
+   * @param once When set to `true` it'll invoke the provided {@link cb | callback} only once.
+   * @param cb The `callback` to be invoked.
+   */
+  _onGet<T>(provider: ProviderToken<T>, once: boolean, cb: () => Promise<void> | void): void;
 
   /**
    * Can be used to execute the provided {@link cb | callback} whenever an existing {@link https://inversify.io/docs/fundamentals/binding/ | binding}
@@ -96,8 +106,7 @@ export interface IProviderModuleNaked extends IProviderModule {
   /**
    * Can be used to execute the provided {@link cb | callback} whenever a {@link provider} is `unbound`.
    *
-   * **Note:** _This is not the same as the {@link onDeactivationEvent}!_
-   * _Also the {@link _onBind}, {@link __rebind} and {@link _onUnbind} registered callbacks will be removed._
+   * **Note:** _All the {@link _onBind}, {@link _onGet}, {@link _onRebind} and {@link _onUnbind} registered callbacks will be removed_
    *
    * @param provider The {@link ProviderToken}.
    * @param cb The `callback` to be invoked.
@@ -245,6 +254,7 @@ export type RegisteredBindingSideEffects = Map<
   ProviderToken,
   {
     onBindEffects: (() => Promise<void> | void)[];
+    onGetEffects: { once: boolean; invoked: boolean; cb: () => Promise<void> | void }[];
     onRebindEffects: (() => Promise<void> | void)[];
     onUnbindEffects: (() => Promise<void> | void)[];
   }

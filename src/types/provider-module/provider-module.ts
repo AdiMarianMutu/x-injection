@@ -1,9 +1,7 @@
-import type { BindingActivation, BindingDeactivation } from 'inversify';
-
 import type { ProviderIdentifier, ProviderToken } from '../provider-token';
 import type { IProviderModuleNaked } from './provider-module-naked';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { ProviderModuleOptions, ProviderModuleOptionsInternal } from './provider-module-options';
+import type { ProviderModuleOptions } from './provider-module-options';
 
 export interface IProviderModule {
   /** The module unique ID. */
@@ -47,20 +45,6 @@ export interface IProviderModule {
   getMany<D extends (ProviderModuleGetManyParam<any> | ProviderToken)[]>(
     ...deps: D | unknown[]
   ): ProviderModuleGetManySignature<D>;
-
-  /**
-   * Adds an activation handler for the {@link provider}.
-   *
-   * See {@link https://inversify.io/docs/api/container/#onactivation} for more details.
-   */
-  onActivationEvent<T>(provider: ProviderToken<T>, cb: BindingActivation<T>): void;
-
-  /**
-   * Adds a deactivation handler for the {@link provider}.
-   *
-   * See {@link https://inversify.io/docs/api/container/#ondeactivation} for more details.
-   */
-  onDeactivationEvent<T>(provider: ProviderToken<T>, cb: BindingDeactivation<T>): void;
 
   /**
    * Casts the current module type to the {@link IProviderModuleNaked} type.

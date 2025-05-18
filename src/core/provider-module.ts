@@ -1,11 +1,4 @@
-import {
-  Container,
-  type BindingActivation,
-  type BindingDeactivation,
-  type BindToFluentSyntax,
-  type GetOptions,
-  type IsBoundOptions,
-} from 'inversify';
+import { Container, type BindToFluentSyntax, type GetOptions, type IsBoundOptions } from 'inversify';
 
 import { InjectionScope } from '../enums';
 import {
@@ -24,7 +17,6 @@ import type {
   ProviderModuleOptions,
   ProviderModuleOptionsInternal,
   ProviderToken,
-  RegisteredBindingSideEffects,
   StaticExports,
 } from '../types';
 import { ProviderModuleUtils } from '../utils';
@@ -104,8 +96,7 @@ export class ProviderModule implements IProviderModule {
   protected readonly providers!: IProviderModuleNaked['providers'];
   protected readonly importedProviders!: IProviderModuleNaked['importedProviders'];
   protected readonly exports!: IProviderModuleNaked['exports'];
-
-  private readonly registeredBindingSideEffects!: RegisteredBindingSideEffects;
+  protected readonly registeredBindingSideEffects!: IProviderModuleNaked['registeredBindingSideEffects'];
 
   constructor({
     identifier,
@@ -158,18 +149,6 @@ export class ProviderModule implements IProviderModule {
     }) as any;
   }
 
-  onActivationEvent<T>(provider: ProviderToken<T>, cb: BindingActivation<T>): void {
-    this.shouldThrowIfDisposed();
-
-    this.container.onActivation(ProviderTokenHelpers.toServiceIdentifier(provider), cb);
-  }
-
-  onDeactivationEvent<T>(provider: ProviderToken<T>, cb: BindingDeactivation<T>): void {
-    this.shouldThrowIfDisposed();
-
-    this.container.onDeactivation(ProviderTokenHelpers.toServiceIdentifier(provider), cb);
-  }
-
   toNaked(): IProviderModuleNaked {
     return this as any;
   }
@@ -177,7 +156,7 @@ export class ProviderModule implements IProviderModule {
   clone(options?: Partial<ProviderModuleOptions>): IProviderModule {
     const _options = options as ProviderModuleOptionsInternal;
 
-    return new ProviderModule(
+    const clone = new ProviderModule(
       ProviderModuleHelpers.buildInternalConstructorParams({
         isAppModule: this.isAppModule,
         markAsGlobal: this.isMarkedAsGlobal,
@@ -193,6 +172,11 @@ export class ProviderModule implements IProviderModule {
         ..._options,
       })
     );
+
+    //@ts-expect-error Read-only property.
+    clone.registeredBindingSideEffects = new Map(this.registeredBindingSideEffects);
+
+    return clone;
   }
 
   async dispose(): Promise<void> {
@@ -301,21 +285,27 @@ export class ProviderModule implements IProviderModule {
 
   private registerBindingSideEffect(
     provider: ProviderToken,
-    on: 'bind' | 'rebind' | 'unbind',
-    cb: () => Promise<void> | void
+    on: 'bind' | 'get' | 'rebind' | 'unbind',
+    cb: () => Promise<void> | void,
+    options?: Record<string, any>
   ): void {
-    if (!this.registeredBindingSideEffects.has(provider)) {
-      this.registeredBindingSideEffects.set(provider, {
+    const serviceIdentifier = ProviderTokenHelpers.toServiceIdentifier(provider);
+
+    if (!this.registeredBindingSideEffects.has(serviceIdentifier)) {
+      this.registeredBindingSideEffects.set(serviceIdentifier, {
         onBindEffects: [],
+        onGetEffects: [],
         onRebindEffects: [],
         onUnbindEffects: [],
       });
     }
 
-    const providerBindingSideEffects = this.registeredBindingSideEffects.get(provider)!;
+    const providerBindingSideEffects = this.registeredBindingSideEffects.get(serviceIdentifier)!;
 
     if (on === 'bind') {
       providerBindingSideEffects.onBindEffects.push(cb);
+    } else if (on === 'get') {
+      providerBindingSideEffects.onGetEffects.push({ once: options!.once, invoked: false, cb });
     } else if (on === 'rebind') {
       providerBindingSideEffects.onRebindEffects.push(cb);
     } else {
@@ -323,12 +313,24 @@ export class ProviderModule implements IProviderModule {
     }
   }
 
-  private invokeRegisteredBindingSideEffects(provider: ProviderToken, event: 'onBind' | 'onRebind' | 'onUnbind'): void {
-    const providerBindingSideEffects = this.registeredBindingSideEffects.get(provider);
+  private invokeRegisteredBindingSideEffects(
+    provider: ProviderToken,
+    event: 'onBind' | 'onGet' | 'onRebind' | 'onUnbind'
+  ): void {
+    const serviceIdentifier = ProviderTokenHelpers.toServiceIdentifier(provider);
+
+    const providerBindingSideEffects = this.registeredBindingSideEffects.get(serviceIdentifier);
     /* istanbul ignore next */
     if (!providerBindingSideEffects) return;
 
-    providerBindingSideEffects[`${event}Effects`].forEach((cb) => cb());
+    providerBindingSideEffects[`${event}Effects`].forEach((p) => {
+      if (typeof p === 'function') return p();
+
+      if (p.invoked && p.once) return;
+
+      p.invoked = true;
+      p.cb();
+    });
   }
 
   private removeRegisteredBindingSideEffects(provider: ProviderToken | 'all'): void {
@@ -341,10 +343,12 @@ export class ProviderModule implements IProviderModule {
       return;
     }
 
-    if (!this.registeredBindingSideEffects.has(provider)) return;
+    const serviceIdentifier = ProviderTokenHelpers.toServiceIdentifier(provider);
 
-    this.registeredBindingSideEffects.get(provider)?.onUnbindEffects.forEach((cb) => cb());
-    this.registeredBindingSideEffects.delete(provider);
+    if (!this.registeredBindingSideEffects.has(serviceIdentifier)) return;
+
+    this.registeredBindingSideEffects.get(serviceIdentifier)?.onUnbindEffects.forEach((cb) => cb());
+    this.registeredBindingSideEffects.delete(serviceIdentifier);
   }
 
   private shouldThrowIfDisposed(): void {
@@ -456,6 +460,24 @@ export class ProviderModule implements IProviderModule {
   /**
    * **Publicly visible when the instance is casted to {@link IProviderModuleNaked}.**
    *
+   * See {@link IProviderModuleNaked._onGet}.
+   */
+  protected _onGet<T>(provider: ProviderToken<T>, once: boolean, cb: () => Promise<void> | void): void {
+    this.shouldThrowIfDisposed();
+
+    if (typeof once !== 'boolean') {
+      throw new InjectionProviderModuleError(
+        this,
+        `The 'once' parameter is required when using the '${this._onGet.name}' method!`
+      );
+    }
+
+    this.registerBindingSideEffect(provider, 'get', cb, { once });
+  }
+
+  /**
+   * **Publicly visible when the instance is casted to {@link IProviderModuleNaked}.**
+   *
    * See {@link IProviderModuleNaked._onRebind}.
    */
   protected _onRebind<T>(provider: ProviderToken<T>, cb: () => Promise<void> | void): void {
@@ -513,6 +535,8 @@ export class ProviderModule implements IProviderModule {
   /* istanbul ignore next */
   protected __get<T>(provider: ProviderToken<T>, options?: GetOptions): T {
     this.shouldThrowIfDisposed();
+
+    this.invokeRegisteredBindingSideEffects(provider, 'onGet');
 
     return this.container.get(ProviderTokenHelpers.toServiceIdentifier(provider), options);
   }

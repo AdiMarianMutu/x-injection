@@ -4,7 +4,5 @@ export * from './multi-inject';
 export * from './inject-from-base';
 export * from './named';
 export * from './optional';
-export * from './post-construct';
-export * from './pre-destroy';
 export * from './tagged';
 export * from './unmanaged';

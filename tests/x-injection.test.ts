@@ -420,6 +420,109 @@ describe('Core', () => {
 
       expect(cb).toHaveBeenCalledTimes(1);
     });
+
+    it('should correctly clear binding effects from importer module when unbinding', async () => {
+      const ImportedModule = new ProviderModule({
+        identifier: Symbol('ImportedModule'),
+        providers: [EmptyService],
+        exports: [EmptyService],
+      }).toNaked();
+
+      const AModule = new ProviderModule({
+        identifier: Symbol('AModule'),
+        imports: [ImportedModule],
+      }).toNaked();
+
+      const BModule = new ProviderModule({
+        identifier: Symbol('BModule'),
+        imports: [ImportedModule],
+      }).toNaked();
+
+      const CModule = new ProviderModule({
+        identifier: Symbol('CModule'),
+        imports: [ImportedModule],
+      }).toNaked();
+
+      AModule._onUnbind(EmptyService, () => {});
+      BModule._onUnbind(EmptyService, () => {});
+      CModule._onUnbind(EmptyService, () => {});
+
+      expect(ImportedModule.toNaked().registeredSideEffects.get(EmptyService)?.onUnbindEffects.length).toBe(3);
+
+      await ImportedModule.__unbind(EmptyService);
+
+      expect(ImportedModule.toNaked().registeredSideEffects.get(EmptyService)?.onUnbindEffects.length).toBeUndefined();
+    });
+
+    it('should correctly clear binding effects from importer module when unbinding', async () => {
+      const ImportedModule = new ProviderModule({
+        identifier: Symbol('ImportedModule'),
+        providers: [EmptyService],
+        exports: [EmptyService],
+      }).toNaked();
+
+      const AModule = new ProviderModule({
+        identifier: Symbol('AModule'),
+        imports: [ImportedModule],
+      }).toNaked();
+
+      const BModule = new ProviderModule({
+        identifier: Symbol('BModule'),
+        imports: [ImportedModule],
+      }).toNaked();
+
+      const CModule = new ProviderModule({
+        identifier: Symbol('CModule'),
+        imports: [ImportedModule],
+      }).toNaked();
+
+      AModule._onUnbind(EmptyService, () => {});
+      BModule._onUnbind(EmptyService, () => {});
+      CModule._onUnbind(EmptyService, () => {});
+
+      expect(ImportedModule.toNaked().registeredSideEffects.get(EmptyService)?.onUnbindEffects.length).toBe(3);
+
+      await AModule.__unbind(EmptyService);
+      await BModule.__unbind(EmptyService);
+      await CModule.__unbind(EmptyService);
+
+      expect(ImportedModule.toNaked().registeredSideEffects.get(EmptyService)?.onUnbindEffects.length).toBe(0);
+    });
+
+    it('should correctly clear binding effects from importer module when disposing', async () => {
+      const ImportedModule = new ProviderModule({
+        identifier: Symbol('ImportedModule'),
+        providers: [EmptyService],
+        exports: [EmptyService],
+      }).toNaked();
+
+      const AModule = new ProviderModule({
+        identifier: Symbol('AModule'),
+        imports: [ImportedModule],
+      }).toNaked();
+
+      const BModule = new ProviderModule({
+        identifier: Symbol('BModule'),
+        imports: [ImportedModule],
+      }).toNaked();
+
+      const CModule = new ProviderModule({
+        identifier: Symbol('CModule'),
+        imports: [ImportedModule],
+      }).toNaked();
+
+      AModule._onUnbind(EmptyService, () => {});
+      BModule._onUnbind(EmptyService, () => {});
+      CModule._onUnbind(EmptyService, () => {});
+
+      expect(ImportedModule.toNaked().registeredSideEffects.get(EmptyService)?.onUnbindEffects.length).toBe(3);
+
+      await AModule.dispose();
+      await BModule.dispose();
+      await CModule.dispose();
+
+      expect(ImportedModule.toNaked().registeredSideEffects.get(EmptyService)?.onUnbindEffects.length).toBe(0);
+    });
   });
 
   describe('AppModule', () => {

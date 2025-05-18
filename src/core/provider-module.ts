@@ -1,4 +1,10 @@
-import { Container, type BindToFluentSyntax, type GetOptions, type IsBoundOptions } from 'inversify';
+import {
+  Container,
+  type BindToFluentSyntax,
+  type GetOptions,
+  type IsBoundOptions,
+  type ServiceIdentifier,
+} from 'inversify';
 
 import { InjectionScope } from '../enums';
 import {
@@ -12,6 +18,7 @@ import type {
   IProviderModule,
   IProviderModuleNaked,
   LazyInitOptions,
+  OnGetEffects,
   ProviderModuleGetManyParam,
   ProviderModuleGetManySignature,
   ProviderModuleOptions,
@@ -96,7 +103,7 @@ export class ProviderModule implements IProviderModule {
   protected readonly providers!: IProviderModuleNaked['providers'];
   protected readonly importedProviders!: IProviderModuleNaked['importedProviders'];
   protected readonly exports!: IProviderModuleNaked['exports'];
-  protected readonly registeredBindingSideEffects!: IProviderModuleNaked['registeredBindingSideEffects'];
+  protected readonly registeredSideEffects!: IProviderModuleNaked['registeredSideEffects'];
 
   constructor({
     identifier,
@@ -174,7 +181,7 @@ export class ProviderModule implements IProviderModule {
     );
 
     //@ts-expect-error Read-only property.
-    clone.registeredBindingSideEffects = new Map(this.registeredBindingSideEffects);
+    clone.registeredSideEffects = new Map(this.registeredSideEffects);
 
     return clone;
   }
@@ -196,7 +203,7 @@ export class ProviderModule implements IProviderModule {
     //@ts-expect-error Read-only property.
     this.dynamicExports = null;
     //@ts-expect-error Read-only property.
-    this.registeredBindingSideEffects = null;
+    this.registeredSideEffects = null;
 
     //@ts-expect-error Read-only property.
     this.isDisposed = true;
@@ -230,16 +237,16 @@ export class ProviderModule implements IProviderModule {
   private injectImportedModules(modules?: (IProviderModuleNaked | (() => IProviderModuleNaked))[]): void {
     if (!modules || modules.length === 0) return;
 
-    modules.forEach((module) => {
-      if (module.toString() === 'GlobalAppModule') {
+    modules.forEach((importedModule) => {
+      if (importedModule.toString() === 'GlobalAppModule') {
         throw new InjectionProviderModuleError(this, `The 'GlobalAppModule' can't be imported!`);
       }
 
       // The current iteration may actually be a lazy module.
-      module = typeof module === 'function' ? module() : module;
+      importedModule = typeof importedModule === 'function' ? importedModule() : importedModule;
 
-      const moduleStaticExports = module._getExportableModulesAndProviders();
-      const moduleDynamicExports = module.dynamicExports?.(this, moduleStaticExports);
+      const moduleStaticExports = importedModule._getExportableModulesAndProviders();
+      const moduleDynamicExports = importedModule.dynamicExports?.(this, moduleStaticExports);
 
       (moduleDynamicExports ?? moduleStaticExports).forEach((exportable) => {
         if (exportable instanceof ProviderModule) {
@@ -254,33 +261,53 @@ export class ProviderModule implements IProviderModule {
         }
 
         const provider = exportable as DependencyProvider;
+        const serviceIdentifier = ProviderTokenHelpers.toServiceIdentifier(provider);
         const importedProvider = this.importedProvidersMap!(
           {
-            scope: ProviderTokenHelpers.getInjectionScopeByPriority(provider, module.defaultScope.native),
-            provide: ProviderTokenHelpers.toServiceIdentifier(provider),
-            useFactory: () => module.get(provider),
+            scope: ProviderTokenHelpers.getInjectionScopeByPriority(provider, importedModule.defaultScope.native),
+            provide: serviceIdentifier,
+            useFactory: () => importedModule.get(provider),
             // As we are using a factory token, there is no need to include the `onEvent` and `when` properties
             // into the processed `ProviderToken` created for this imported provider,
             // because the `importedModule.get` invokation will
             // fire the `onEvent` and `when` properties of the original imported provider.
           },
           provider,
-          module
+          importedModule
         );
 
-        this.importedProviders.set(module, [...(this.importedProviders.get(module) ?? []), importedProvider]);
+        this.importedProviders.set(importedModule, [
+          ...(this.importedProviders.get(importedModule) ?? []),
+          importedProvider,
+        ]);
 
-        this.moduleUtils.bindToContainer(importedProvider, module.defaultScope.native);
+        this.moduleUtils.bindToContainer(importedProvider, importedModule.defaultScope.native);
+        const _importedModule = importedModule as unknown as ProviderModule;
 
-        // Let's make sure that when the parent module unbinds the provider
-        // this module unbinds it aswell.
-        module._onUnbind(provider, () => this.__unbind(importedProvider));
+        // Let's make sure that when the imported module unbinds the provider
+        // this module unbinds it as well.
+        _importedModule.onUnbindInternal(provider, this.identifier, () => this.__unbind(importedProvider));
+
+        // But also the other way around
+        this._onUnbind(importedProvider, () => {
+          this.removeOnUnbindEffectsFromImportedModule(serviceIdentifier, _importedModule);
+        });
       });
     });
   }
 
   private injectProviders(): void {
     this.providers.forEach((provider) => this.moduleUtils.bindToContainer(provider, this.defaultScope.native));
+  }
+
+  private onUnbindInternal<T>(
+    provider: ProviderToken<T>,
+    registerModule: symbol,
+    cb: () => Promise<void> | void
+  ): void {
+    this.shouldThrowIfDisposed();
+
+    this.registerBindingSideEffect(provider, 'unbind', cb, { registerModule });
   }
 
   private registerBindingSideEffect(
@@ -291,8 +318,8 @@ export class ProviderModule implements IProviderModule {
   ): void {
     const serviceIdentifier = ProviderTokenHelpers.toServiceIdentifier(provider);
 
-    if (!this.registeredBindingSideEffects.has(serviceIdentifier)) {
-      this.registeredBindingSideEffects.set(serviceIdentifier, {
+    if (!this.registeredSideEffects.has(serviceIdentifier)) {
+      this.registeredSideEffects.set(serviceIdentifier, {
         onBindEffects: [],
         onGetEffects: [],
         onRebindEffects: [],
@@ -300,16 +327,16 @@ export class ProviderModule implements IProviderModule {
       });
     }
 
-    const providerBindingSideEffects = this.registeredBindingSideEffects.get(serviceIdentifier)!;
+    const providerBindingSideEffects = this.registeredSideEffects.get(serviceIdentifier)!;
 
     if (on === 'bind') {
       providerBindingSideEffects.onBindEffects.push(cb);
     } else if (on === 'get') {
-      providerBindingSideEffects.onGetEffects.push({ once: options!.once, invoked: false, cb });
+      providerBindingSideEffects.onGetEffects.push({ once: options!['once'], invoked: false, cb });
     } else if (on === 'rebind') {
       providerBindingSideEffects.onRebindEffects.push(cb);
-    } else {
-      providerBindingSideEffects.onUnbindEffects.push(cb);
+    } else if (on === 'unbind') {
+      providerBindingSideEffects.onUnbindEffects.push({ registerModule: options?.['registerModule'], cb });
     }
   }
 
@@ -319,36 +346,53 @@ export class ProviderModule implements IProviderModule {
   ): void {
     const serviceIdentifier = ProviderTokenHelpers.toServiceIdentifier(provider);
 
-    const providerBindingSideEffects = this.registeredBindingSideEffects.get(serviceIdentifier);
+    const providerBindingSideEffects = this.registeredSideEffects.get(serviceIdentifier);
     /* istanbul ignore next */
     if (!providerBindingSideEffects) return;
 
     providerBindingSideEffects[`${event}Effects`].forEach((p) => {
       if (typeof p === 'function') return p();
 
-      if (p.invoked && p.once) return;
+      if (event === 'onGet') {
+        const options = p as OnGetEffects;
 
-      p.invoked = true;
+        if (options.invoked && options.once) return;
+
+        options.invoked = true;
+      }
+
       p.cb();
     });
   }
 
   private removeRegisteredBindingSideEffects(provider: ProviderToken | 'all'): void {
     /* istanbul ignore next */
-    if (!this.registeredBindingSideEffects) return;
+    if (!this.registeredSideEffects) return;
 
     if (provider === 'all') {
-      this.registeredBindingSideEffects.forEach(({ onUnbindEffects }) => onUnbindEffects.forEach((cb) => cb()));
+      this.registeredSideEffects.forEach(({ onUnbindEffects }) => onUnbindEffects.forEach((effect) => effect.cb()));
+      this.registeredSideEffects.clear();
 
       return;
     }
 
     const serviceIdentifier = ProviderTokenHelpers.toServiceIdentifier(provider);
 
-    if (!this.registeredBindingSideEffects.has(serviceIdentifier)) return;
+    /* istanbul ignore next */
+    if (!this.registeredSideEffects.has(serviceIdentifier)) return;
 
-    this.registeredBindingSideEffects.get(serviceIdentifier)?.onUnbindEffects.forEach((cb) => cb());
-    this.registeredBindingSideEffects.delete(serviceIdentifier);
+    this.registeredSideEffects.get(serviceIdentifier)?.onUnbindEffects.forEach((effect) => effect.cb());
+    this.registeredSideEffects.delete(serviceIdentifier);
+  }
+
+  private removeOnUnbindEffectsFromImportedModule(
+    serviceIdentifier: ServiceIdentifier,
+    importedModule: ProviderModule
+  ): void {
+    const effects = importedModule.registeredSideEffects.get(serviceIdentifier);
+    if (!effects) return;
+
+    effects.onUnbindEffects = effects.onUnbindEffects.filter((effect) => effect.registerModule !== this.identifier);
   }
 
   private shouldThrowIfDisposed(): void {
@@ -403,7 +447,7 @@ export class ProviderModule implements IProviderModule {
     //@ts-expect-error Read-only property.
     this.moduleUtils = new ProviderModuleUtils(this, _internalParams);
     //@ts-expect-error Read-only property.
-    this.registeredBindingSideEffects = new Map();
+    this.registeredSideEffects = new Map();
 
     this.injectImportedModules(this._getImportedModules());
     this.injectProviders();

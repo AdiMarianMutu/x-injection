@@ -61,7 +61,7 @@ export interface IProviderModuleNaked extends IProviderModule {
   /** Can be used to override all the _imported_ providers _before_ the binding process. */
   readonly importedProvidersMap: ProviderModuleOptionsInternal['importedProvidersMap'];
 
-  readonly registeredBindingSideEffects: RegisteredBindingSideEffects;
+  readonly registeredSideEffects: RegisteredSideEffects;
 
   /** It'll _completely_ re-init the `module` with the provided {@link LazyInitOptions | options}. */
   _lazyInit(options: LazyInitOptions): IProviderModule;
@@ -250,12 +250,17 @@ export type LazyInitOptions = Except<
   'identifier' | 'isAppModule'
 >;
 
-export type RegisteredBindingSideEffects = Map<
+export type RegisteredSideEffects = Map<
   ProviderToken,
   {
-    onBindEffects: (() => Promise<void> | void)[];
-    onGetEffects: { once: boolean; invoked: boolean; cb: () => Promise<void> | void }[];
-    onRebindEffects: (() => Promise<void> | void)[];
-    onUnbindEffects: (() => Promise<void> | void)[];
+    onBindEffects: OnBindEffects[];
+    onGetEffects: OnGetEffects[];
+    onRebindEffects: OnRebindEffects[];
+    onUnbindEffects: OnUnbindEffects[];
   }
 >;
+
+export type OnBindEffects = () => Promise<void> | void;
+export type OnGetEffects = { once: boolean; invoked: boolean; cb: () => Promise<void> | void };
+export type OnRebindEffects = () => Promise<void> | void;
+export type OnUnbindEffects = { registerModule?: symbol; cb: () => Promise<void> | void };

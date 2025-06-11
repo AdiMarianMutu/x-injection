@@ -1,4 +1,5 @@
-import { ProviderModule } from '../src';
+import { InjectionProviderModuleDisposedError, ProviderModule } from '../src';
+import { EmptyService } from './setup';
 
 describe('Dispose', () => {
   const beforeCb = jest.fn();
@@ -41,6 +42,12 @@ describe('Dispose', () => {
     await m.dispose();
 
     expect(afterCb).toHaveBeenCalledTimes(1);
+  });
+
+  it('should throw when accessing a disposed module', async () => {
+    await m.dispose();
+
+    expect(() => m.get(EmptyService)).toThrow(InjectionProviderModuleDisposedError);
   });
 
   it('should be able to use `lazyInit` to re-initialize a disposed `module`', async () => {

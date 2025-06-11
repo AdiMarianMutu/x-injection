@@ -32,6 +32,22 @@ describe('AppModule', () => {
     );
   });
 
+  it('should correctly dispose the `AppModule`', async () => {
+    const cb = jest.fn();
+    const am = new GlobalAppModule().register<true>({
+      onDispose: () => {
+        return {
+          after: cb,
+        };
+      },
+    });
+
+    await am.dispose();
+
+    expect(cb).toHaveBeenCalledTimes(1);
+    expect(am.isDisposed).toBe(true);
+  });
+
   describe('Global Mark', () => {
     afterEach(() => GlobalModuleRegister.clear());
 

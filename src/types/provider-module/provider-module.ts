@@ -1,14 +1,13 @@
 import type { ProviderIdentifier, ProviderToken } from '../provider-token';
 import type { IProviderModuleNaked } from './provider-module-naked';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { ProviderModuleOptions } from './provider-module-options';
 
 export interface IProviderModule {
   /** The module unique ID. */
-  readonly identifier: symbol;
+  readonly identifier: ModuleIdentifier;
 
   /** See {@link ProviderModuleOptions.markAsGlobal}. */
-  readonly isMarkedAsGlobal: boolean;
+  readonly isMarkedAsGlobal: ProviderModuleOptions['markAsGlobal'];
 
   readonly isDisposed: boolean;
 
@@ -54,26 +53,17 @@ export interface IProviderModule {
   toNaked(): IProviderModuleNaked;
 
   /**
-   * Can be used to create a new instance of the current {@link IProviderModule | module}.
-   *
-   * **Note:** _All the providers will be registered again within the new module!_
-   * _And also the new module will still refrain values by reference to its parent module because of_
-   * _JS limitation in deeply/truly cloning an instance._
-   *
-   * @param options Apply a new set of {@link ProviderModuleOptions | options}.
-   */
-  clone(options?: Partial<ProviderModuleOptions>): IProviderModule;
-
-  /**
    * Removes all the bindings from the {@link IProviderModuleNaked.container | container}.
    *
    * **Note:** The module can be fully re-initialized by invoking the {@link _lazyInit} method.
    */
   dispose(): Promise<void>;
 
-  /** Returns the {@link IProviderModule.identifier} `symbol` description. */
+  /** Returns the {@link IProviderModule.identifier}. */
   toString(): string;
 }
+
+export type ModuleIdentifier = symbol | string;
 
 export type ProviderModuleGetManySignature<Tokens extends (ProviderModuleGetManyParam<any> | ProviderToken)[]> = {
   [K in keyof Tokens]: Tokens[K] extends ProviderModuleGetManyParam<infer U>

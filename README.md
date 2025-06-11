@@ -28,8 +28,14 @@ xInjection&nbsp;<a href="https://www.npmjs.com/package/@adimm/x-injection" targe
     - [Transient](#transient)
     - [Request](#request)
 - [Custom Provider Modules](#custom-provider-modules)
-  - [Dynamic Exports](#dynamic-exports)
+  - [Lazy `imports` and `exports`](#lazy-imports-and-exports)
+    - [Imports](#imports)
+    - [Exports](#exports)
 - [Advanced Usage](#advanced-usage)
+  - [ProviderModuleNaked Interface](#providermodulenaked-interface)
+  - [Strict Mode](#strict-mode)
+    - [Why you should not turn it off:](#why-you-should-not-turn-it-off)
+      - [MarkAsGlobal](#markasglobal)
 - [Unit Tests](#unit-tests)
 - [Documentation](#documentation)
 - [ReactJS Implementation](#reactjs-implementation)
@@ -193,22 +199,32 @@ The [Request](https://adimarianmutu.github.io/x-injection/enums/InjectionScope.h
 Example:
 
 ```ts
-class Book {}
+@Injectable(InjectionScope.Transient)
+class Book {
+  author: string;
+}
 
-class Box {
+@Injectable(InjectionScope.Request)
+class Metro2033 extends Book {
+  override author = 'Dmitry Alekseyevich Glukhovsky';
+}
+
+@Injectable(InjectionScope.Transient)
+class Library {
   constructor(
-    private readonly book0: Book,
-    private readonly book1: Book
+    public readonly metro2033: Metro2033,
+    public readonly metro2033_reference: Metro2033
   ) {}
 }
 
-const box0 = MyModule.get(Box);
-const box1 = MyModule.get(Box);
+const winstonLibrary = MyModule.get(Library);
+const londonLibrary = MyModule.get(Library);
 
-expect(box0.book0).toBe(box0.book1);
+expect(winstonLibrary.metro2033).toBe(winstonLibrary.metro2033_reference);
+expect(londonLibrary.metro2033).toBe(londonLibrary.metro2033_reference);
 // true
 
-expect(box0.book0).toBe(box1.book0);
+expect(winstonLibrary.metro2033).toBe(londonLibrary.metro2033);
 // false
 ```
 
@@ -233,6 +249,7 @@ export class SessionService {
 
 export const DatabaseModule = new ProviderModule({
   identifier: Symbol('DatabaseModule'),
+  // or:  identifier: 'DatabaseModule',
   providers: [DatabaseService],
   exports: [DatabaseService],
   onReady: async (module) => {
@@ -266,31 +283,6 @@ AppModule.register({
 > **Note:** The `AppModule.register` method can be invoked only _once_! _(You may re-invoke it only after the module has been disposed)_ Preferably during your application bootstrapping process.
 
 From now on, the `AppModule` container has the references of the `DatabaseService` and the `SessionService`.
-But it is important to keep in mind of some aspects:
-
-- We know that the `DatabaseService` scope is set to `Singleton`.
-- We know that the `SessionService` scope is set to `Request`.
-
-This means that if we do:
-
-```ts
-const databaseService_a = AppModule.get(DatabaseService);
-const databaseService_b = AppModule.get(DatabaseService);
-
-expect(databaseService_a).toBe(databaseService_b);
-```
-
-Will produce `true`, but, doing:
-
-```ts
-const sessionService_a = AppModule.get(SessionService);
-const sessionService_b = AppModule.get(SessionService);
-
-expect(sessionService_a).toBe(sessionService_b);
-```
-
-Will produce `false` because Inversify's [Request](https://inversify.io/docs/fundamentals/binding/#request) scope acts as a `Singleton` scope within the same module context
-and as a `Transient` scope outside the module context.
 
 **Inject multiple dependencies:**
 
@@ -300,63 +292,57 @@ const [serviceA, serviceB] = BigModule.getMany(ServiceA, ServiceB);
 const [serviceC, serviceD] = BigModule.getMany<[ServiceC, ServiceD]>(SERVICE_TOKEN, 'SERVICE_ID');
 ```
 
-### Dynamic Exports
+### Lazy `imports` and `exports`
 
-`xInjection` allows a `ProviderModule` to also dynamically choose _what_ and _when_ to export a provider/module.
+You can also lazy import or export `providers`/`modules`, usually you don't need this feature, but there may be some advanced cases where you may want to be able to do so.
 
-> **With great power comes great responsibility! 🥸**
+> The lazy callback defers the actual module resolution from the moment of module definition to the moment the container processes imports at run-time, this may help in breaking immediate circular reference chain under some circumstances.
 
-This is a very powerful feature and for the most use cases, you'll not need to use it.
-However, if you may ever need to use a dynamic export, here is a simple example:
+#### Imports
+
+You can lazily `import` a `module` by providing a `callback` _(it can also be an `async` callback)_ as shown below:
 
 ```ts
-class WingsService {}
-
-class AnimalService {}
-
-class CatService extends AnimalService {
-  // This line throws an error at some point.
-  constructor(public readonly wings: WingsService) {}
-}
-
-class CrowService extends AnimalService {
-  constructor(public readonly wings: WingsService) {}
-}
-
-const AnimalModule = new ProviderModule({
-  identifier: Symbol('AnimalModule'),
-  providers: [AnimalService, { provide: WingsService, useClass: WingsService, scope: InjectionScope.Transient }],
-  exports: [AnimalService, WingsService],
-  dynamicExports: (importerModule, moduleExports) => {
-    // If the importer module is `CrowModule`, we'll export the entire
-    // `exports` list, because `moduleExports` is actually the `exports` array declared above.
-    // Meaning that the `CrowModule` container will also have access to the `WingsService`
-    if (importerModule.toString() === 'CrowModule') return moduleExports;
-
-    // Otherwise it is the `CatModule` and we are not
-    // exporting the `WingsService` as cats don't fly, or do they fly? 🧐
-    return [AnimalService];
-  },
+const BankBranchModule = new ProviderModule({
+  identifier: 'BankBranchModule',
+  providers: [BankBranchService],
+  exports: [BankBranchService],
 });
 
-const CrowModule = new ProviderModule({
-  identifier: Symbol('CrowModule'),
-  imports: [AnimalModule],
-  providers: [CrowService],
-  exports: [CrowService],
-});
-
-const CatModule = new ProviderModule({
-  identifier: Symbol('CatModule'),
-  imports: [AnimalModule],
-  providers: [CatService],
-  exports: [CatService],
+const BankModule = new ProviderModule({
+  identifier: 'BankModule',
+  imports: [..., () => { return BankBranchModule }]
 });
 ```
 
-Hopefully the provided example shows how powerful the `dynamicExports` property it is, but, there are some things to keep in mind in order to avoid nasty bugs!
+#### Exports
+
+You can lazily `export` a `provider` or `module` by providing a `callback` _(it can also be an `async` callback)_ as shown below:
+
+```ts
+const SecureBankBranchModule = new ProviderModule({
+  identifier: 'SecureBankBranchModule',
+  providers: [BankBranchService],
+  exports: [BankBranchService],
+});
+
+const BankModule = new ProviderModule({
+  identifier: 'BankModule',
+  imports: [..., () => { return BankBranchModule }],
+  exports: [..., (importerModule) => {
+    // When the module having the identifier `UnknownBankModule` imports the `BankModule`
+    // it'll not be able to also import the `SecureBankBranchModule` as we are not returning it here.
+    if (importerModule.toString() === 'UnknownBankModule') return;
+
+    // Otherwise we safely export it
+    return SecureBankBranchModule;
+  }]
+});
+```
 
 ## Advanced Usage
+
+### ProviderModuleNaked Interface
 
 Each `ProviderModule` instance implements the `IProviderModule` interface for simplicity, but can be cast to `IProviderModuleNaked` for advanced operations:
 
@@ -375,6 +361,53 @@ const globalContainer = GlobalContainer || AppModule.toNaked().container;
 ```
 
 For advanced scenarios, `IProviderModuleNaked` exposes additional methods (prefixed with `__`) that wrap InversifyJS APIs, supporting native `xInjection` provider tokens and more.
+
+### Strict Mode
+
+By default the `AppModule` runs in "strict mode", a built-in mode which enforces an _opinionated_ set of rules aiming to reduce common pitfalls and edge-case bugs.
+
+When invoking the [AppModule.register](https://adimarianmutu.github.io/x-injection/interfaces/IAppModule.html#register-1) `method` you can set the [\_\_strict](https://adimarianmutu.github.io/x-injection/interfaces/AppModuleOptions.html#__strict) property to `false` in order to permanentely disable those set of built-in rules.
+
+> **Note:** _Do not open an `issue` if a bug or edge-case is caused by having the `strict` property disabled!_
+
+#### Why you should not turn it off:
+
+##### MarkAsGlobal
+
+The [markAsGlobal](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#markasglobal) flag property is used to make sure that `modules` which should be registered directly into the `AppModule` are indeed provided to the the `imports` array of the `AppModule` and the the other way around, if a `module` is imported into the `AppModule` without having the `markAsGlobal` flag property set, it'll throw an error.
+
+This may look redundant, but it may save you _(and your team)_ some hours of debugging in understanding why some `providers` are able to make their way into other `modules`. As those `providers` are now acting as _global_ `providers`.
+
+Imagine the following scenario:
+
+```ts
+const ScopedModule = new ProviderModule({
+  identifier: 'ScopedModule',
+  providers: [...],
+  exports: [...],
+});
+
+const AnotherScopedModule = new ProviderModule({
+  identifier: 'AnotherScopedModule',
+  imports: [ScopedModule],
+  providers: [...],
+  exports: [...],
+});
+
+const GlobalModule = new ProviderModule({
+  identifier: 'GlobalModule',
+  markAsGlobal: true,
+  imports: [AnotherScopedModule],
+});
+
+AppModule.register({
+  imports: [GlobalModule],
+});
+```
+
+At first glance you may not spot/understand the issue there, but because the `GlobalModule` _(which is then imported into the `AppModule`)_ is _directly_ importing the `AnotherScopedModule`, it means that _all_ the `providers` of the `AnotherScopedModule` and `ScopedModule` _(because `AnotherScopedModule` also imports `ScopedModule`)_ will become accessible through your entire app!
+
+Disabling `strict` mode removes this safeguard, allowing any module to be imported into the `AppModule` regardless of `markAsGlobal`, increasing risk of bugs by exposing yourself to the above example.
 
 ## Unit Tests
 

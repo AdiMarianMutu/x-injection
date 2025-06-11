@@ -1,50 +1,18 @@
-import { Injectable, InjectionScope } from '../../src';
+import { Injectable } from '../../src';
+
+@Injectable()
+export class GlobalService {}
 
 @Injectable()
 export class EmptyService {}
 
 @Injectable()
-export class AService {}
+export class EmptyService2 {}
 
 @Injectable()
-export class BService {
-  constructor(public readonly aService: AService) {}
-}
-
-@Injectable()
-export class LoggerService {
-  log(message: string): void {
-    console.log(`[Logger]: ${message}`);
-  }
-}
-
-@Injectable()
-export class UserService {
-  firstName?: string;
-  lastName?: string;
-  age?: number;
-  dateOfBirth?: { day: number; month: number; year: number };
-
-  constructor(private readonly loggerService: LoggerService) {}
-
-  logFullName(): void {
-    this.loggerService.log(`${this.firstName} ${this.lastName}`);
-  }
-}
-
-@Injectable()
-export class RequestService {
+export class FilledService {
   constructor(
-    public readonly firstEmptyService: EmptyService,
-    public readonly secondEmptyService: EmptyService
+    public readonly emptyBox: EmptyService,
+    public readonly emptyCan: EmptyService
   ) {}
 }
-
-@Injectable()
-export class PaymentService {}
-
-@Injectable(InjectionScope.Singleton)
-export class SingletonDecoratedService {}
-
-@Injectable(InjectionScope.Transient)
-export class TransientDecoratedService {}

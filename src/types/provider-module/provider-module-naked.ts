@@ -4,11 +4,12 @@ import type { Except } from 'type-fest';
 import type { InjectionScope } from '../../enums';
 import type { ProviderModuleUtils } from '../../utils';
 import type {
-  DynamicExports,
+  ExportsList,
+  ImportsList,
   IProviderModule,
+  ModuleIdentifier,
   ProviderModuleOptions,
   ProviderModuleOptionsInternal,
-  StaticExports,
 } from '../provider-module';
 import type { DependencyProvider, ProviderToken } from '../provider-token';
 
@@ -35,22 +36,11 @@ export interface IProviderModuleNaked extends IProviderModule {
   /** The {@link DependencyProvider | providers} resolved by this module. */
   readonly providers: DependencyProvider[];
 
-  /**
-   * The imported {@link DependencyProvider | providers} resolved by this module.
-   *
-   * _It is a `dictionary` where the key is the {@link IProviderModule | module} and the value an_
-   * _array containing the imported dependencies from that module_
-   */
-  readonly importedProviders: Map<IProviderModuleNaked, DependencyProvider[]>;
+  /** What is exported into this module. */
+  readonly imports: ImportsList;
 
   /** What is exported from this module. */
-  readonly exports: StaticExports;
-
-  /** What is exported into this module. */
-  readonly imports: (IProviderModuleNaked | (() => IProviderModuleNaked))[];
-
-  /** The module dynamic exports method. */
-  readonly dynamicExports: DynamicExports | undefined;
+  readonly exports: ExportsList;
 
   /** The registered `callback` which will be invoked when the internal initialization process has been completed. */
   readonly onReady: ProviderModuleOptions['onReady'];
@@ -58,22 +48,10 @@ export interface IProviderModuleNaked extends IProviderModule {
   /** The registered `callback` which will be invoked when the {@link _dispose} method is invoked. */
   readonly onDispose: ProviderModuleOptions['onDispose'];
 
-  /** Can be used to override all the _imported_ providers _before_ the binding process. */
-  readonly importedProvidersMap: ProviderModuleOptionsInternal['importedProvidersMap'];
-
   readonly registeredSideEffects: RegisteredSideEffects;
 
   /** It'll _completely_ re-init the `module` with the provided {@link LazyInitOptions | options}. */
   _lazyInit(options: LazyInitOptions): IProviderModule;
-
-  /** Can be used to get the list of all the imported modules of this module. */
-  _getImportedModules(): IProviderModuleNaked[];
-
-  /** Can be used to get the list of all the providers of this module. */
-  _getProviders(): DependencyProvider[];
-
-  /** Can be used to get the list of all the exportable modules and providers of this module. */
-  _getExportableModulesAndProviders(): StaticExports;
 
   /**
    * Can be used to execute the provided {@link cb | callback} whenever a _new_ {@link https://inversify.io/docs/fundamentals/binding/ | binding}
@@ -263,4 +241,4 @@ export type RegisteredSideEffects = Map<
 export type OnBindEffects = () => Promise<void> | void;
 export type OnGetEffects = { once: boolean; invoked: boolean; cb: () => Promise<void> | void };
 export type OnRebindEffects = () => Promise<void> | void;
-export type OnUnbindEffects = { registerModule?: symbol; cb: () => Promise<void> | void };
+export type OnUnbindEffects = { registerModuleId?: ModuleIdentifier; cb: () => Promise<void> | void };

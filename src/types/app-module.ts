@@ -3,6 +3,8 @@ import type { Except } from 'type-fest';
 import type { IProviderModule, IProviderModuleNaked, LazyInitOptions } from './provider-module';
 
 export interface IAppModule extends Except<IProviderModule, 'isMarkedAsGlobal'> {
+  readonly __strict: AppModuleOptions['__strict'];
+
   /** Must be invoked _(only once during the application lifecycle)_ in order to provide the {@link options} to the module. */
   register<AsNaked extends boolean = false>(
     options: AppModuleOptions
@@ -11,4 +13,18 @@ export interface IAppModule extends Except<IProviderModule, 'isMarkedAsGlobal'> 
   toNaked(): IAppModule & IProviderModuleNaked;
 }
 
-export type AppModuleOptions = Except<LazyInitOptions, 'exports' | 'dynamicExports'>;
+export interface AppModuleOptions
+  extends Except<LazyInitOptions, 'appModule' | 'markAsGlobal' | 'exports' | 'isDisposed'> {
+  /**
+   * When set to `true` it'll enforce an opinionated set of rules
+   * which _can help_ in avoiding common pitfalls which may otherwise produce
+   * undesired side-effects or edge-case bugs.
+   *
+   * **Note:** _Do not open an `issue` if a bug or edge-case is caused by having the `strict` property disabled!_
+   *
+   * - `markAsGlobal`: Will not be enforced anymore.
+   *
+   * Defaults to `true`.
+   */
+  __strict?: boolean;
+}

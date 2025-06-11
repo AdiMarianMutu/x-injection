@@ -9,6 +9,7 @@ import type {
   ModuleIdentifier,
   ProviderModuleOptions,
   ProviderModuleOptionsInternal,
+  ProviderModuleOrDefinition,
 } from '../provider-module';
 import type { DependencyProvider, ProviderToken } from '../provider-token';
 
@@ -36,7 +37,7 @@ export interface IProviderModuleNaked extends IProviderModule {
   readonly providers: DependencyProvider[];
 
   /** What is exported into this module. */
-  readonly imports: IProviderModule[];
+  readonly imports: ProviderModuleOrDefinition[];
 
   /** What is exported from this module. */
   readonly exports: ExportsList;
@@ -49,8 +50,8 @@ export interface IProviderModuleNaked extends IProviderModule {
 
   readonly registeredSideEffects: RegisteredSideEffects;
 
-  /** It'll _completely_ re-init the `module` with the provided {@link LazyInitOptions | options}. */
-  _lazyInit(options: LazyInitOptions): IProviderModule;
+  /** It'll _completely_ re-init the `module` with the provided {@link InternalInitOptions | options}. */
+  _internalInit(options: InternalInitOptions): IProviderModule;
 
   /**
    * Can be used to execute the provided {@link cb | callback} whenever a _new_ {@link https://inversify.io/docs/fundamentals/binding/ | binding}
@@ -222,7 +223,7 @@ export interface IProviderModuleNaked extends IProviderModule {
   //#endregion
 }
 
-export type LazyInitOptions = Except<
+export type InternalInitOptions = Except<
   ProviderModuleOptions & ProviderModuleOptionsInternal,
   'identifier' | 'isAppModule'
 >;

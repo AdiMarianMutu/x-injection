@@ -1,6 +1,6 @@
 import type { Except } from 'type-fest';
 
-import type { IProviderModule, IProviderModuleNaked, LazyInitOptions } from './provider-module';
+import type { InternalInitOptions, IProviderModule, IProviderModuleNaked } from './provider-module';
 
 export interface IAppModule extends Except<IProviderModule, 'isMarkedAsGlobal'> {
   readonly _strict: AppModuleOptions['_strict'];
@@ -14,7 +14,7 @@ export interface IAppModule extends Except<IProviderModule, 'isMarkedAsGlobal'> 
 }
 
 export interface AppModuleOptions
-  extends Except<LazyInitOptions, 'appModule' | 'markAsGlobal' | 'exports' | 'isDisposed'> {
+  extends Except<InternalInitOptions, 'appModule' | 'markAsGlobal' | 'exports' | 'isDisposed'> {
   /**
    * When set to `true` it'll enforce an opinionated set of rules
    * which _can help_ in avoiding common pitfalls which may otherwise produce

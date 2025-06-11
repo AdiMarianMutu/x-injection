@@ -1,11 +1,11 @@
-import { InjectionProviderModuleDisposedError, ProviderModule } from '../src';
+import { InjectionProviderModuleDisposedError, ProviderModule, ProviderModuleDefinition } from '../src';
 import { EmptyService } from './setup';
 
 describe('Dispose', () => {
   const beforeCb = jest.fn();
   const afterCb = jest.fn();
 
-  const mOptions = {
+  const mdef = new ProviderModuleDefinition({
     identifier: 'm',
     onDispose: () => {
       return {
@@ -13,13 +13,13 @@ describe('Dispose', () => {
         after: afterCb,
       };
     },
-  };
-  const m = new ProviderModule(mOptions).toNaked();
+  });
+  const m = new ProviderModule(mdef).toNaked();
 
   afterEach(() => {
     jest.clearAllMocks();
 
-    m._lazyInit(mOptions);
+    m._internalInit(mdef);
   });
 
   it('should correctly have the `module` disposed', async () => {
@@ -63,7 +63,7 @@ describe('Dispose', () => {
 
     expect(mm.isDisposed).toBe(true);
 
-    mm._lazyInit(mmOptions);
+    mm._internalInit(mmOptions);
 
     expect(mm.get('IS_AVAILABLE')).toBe(true);
   });

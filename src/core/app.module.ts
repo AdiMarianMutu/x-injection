@@ -34,7 +34,7 @@ export class GlobalAppModule extends ProviderModule implements IAppModule {
 
     this._strict = options._strict ?? true;
 
-    this.nakedModule._lazyInit(options);
+    this.nakedModule._internalInit(options);
 
     this.checkIfRegisteredModulesHaveGlobalMark(this.nakedModule, this.imports);
 

@@ -1,12 +1,12 @@
-import { InjectionProviderModuleError, ProviderModule } from '../src';
+import { InjectionProviderModuleError, ProviderModule, ProviderModuleDefinition } from '../src';
 import { EmptyService, EmptyService2 } from './setup';
 
 describe('Effects', () => {
-  const mOptions = {
+  const mdef = new ProviderModuleDefinition({
     identifier: 'm',
     providers: [EmptyService2],
-  };
-  const m = new ProviderModule(mOptions).toNaked();
+  });
+  const m = new ProviderModule(mdef).toNaked();
 
   let cb: () => void;
 
@@ -67,7 +67,7 @@ describe('Effects', () => {
 
       expect(cb).toHaveBeenCalledTimes(1);
 
-      m._lazyInit(mOptions);
+      m._internalInit(mdef);
     });
   });
 

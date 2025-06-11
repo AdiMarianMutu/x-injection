@@ -1,4 +1,5 @@
 import type { ProviderIdentifier, ProviderToken } from '../provider-token';
+import type { IProviderModuleDefinition } from './provider-module-definition';
 import type { IProviderModuleNaked } from './provider-module-naked';
 import type { ProviderModuleOptions } from './provider-module-options';
 
@@ -50,7 +51,7 @@ export interface IProviderModule {
    *
    * @param module The `module` to be imported.
    */
-  lazyImport(...module: IProviderModule[]): void;
+  lazyImport(...module: ProviderModuleOrDefinition[]): void;
 
   /**
    * Casts the current module type to the {@link IProviderModuleNaked} type.
@@ -62,7 +63,7 @@ export interface IProviderModule {
   /**
    * Removes all the bindings from the {@link IProviderModuleNaked.container | container}.
    *
-   * **Note:** The module can be fully re-initialized by invoking the {@link _lazyInit} method.
+   * **Note:** The module can be fully re-initialized by invoking the {@link _internalInit} method.
    */
   dispose(): Promise<void>;
 
@@ -71,6 +72,8 @@ export interface IProviderModule {
 }
 
 export type ModuleIdentifier = symbol | string;
+
+export type ProviderModuleOrDefinition = IProviderModule | IProviderModuleDefinition;
 
 export type ProviderModuleGetManySignature<Tokens extends (ProviderModuleGetManyParam<any> | ProviderToken)[]> = {
   [K in keyof Tokens]: Tokens[K] extends ProviderModuleGetManyParam<infer U>

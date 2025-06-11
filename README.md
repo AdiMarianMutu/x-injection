@@ -27,7 +27,11 @@ xInjection&nbsp;<a href="https://www.npmjs.com/package/@adimm/x-injection" targe
     - [Singleton](#singleton)
     - [Transient](#transient)
     - [Request](#request)
-- [Custom Provider Modules](#custom-provider-modules)
+- [Provider Modules](#provider-modules)
+  - [ProviderModuleDefinition](#providermoduledefinition)
+    - [Feed to `new ProviderModule`](#feed-to-new-providermodule)
+    - [Feed to `lazyImport`](#feed-to-lazyimport)
+    - [Why not just use the `ProviderModuleOptions` interface?](#why-not-just-use-the-providermoduleoptions-interface)
   - [Lazy `imports` and `exports`](#lazy-imports-and-exports)
     - [Imports](#imports)
     - [Exports](#exports)
@@ -228,9 +232,9 @@ expect(winstonLibrary.metro2033).toBe(londonLibrary.metro2033);
 // false
 ```
 
-## Custom Provider Modules
+## Provider Modules
 
-You can define custom modules to encapsulate related providers and manage their scope:
+You can define `modules` to encapsulate related providers and manage their scope:
 
 ```ts
 import { Injectable, InjectionScope, ProviderModule } from '@adimm/x-injection';
@@ -291,6 +295,46 @@ const [serviceA, serviceB] = BigModule.getMany(ServiceA, ServiceB);
 // or
 const [serviceC, serviceD] = BigModule.getMany<[ServiceC, ServiceD]>(SERVICE_TOKEN, 'SERVICE_ID');
 ```
+
+### ProviderModuleDefinition
+
+When you do:
+
+```ts
+const MyModule = new ProviderModule({...});
+```
+
+The `MyModule` will be eagerly instantiated, therefore creating under-the-hood an unique container for the `MyModule` instance.
+
+In some scenarios you may need/want to avoid that, you can achieve that by using the [ProviderModuleDefinition](https://adimarianmutu.github.io/x-injection/interfaces/IProviderModuleDefinition.html) `class`. It allows you to just define a _blueprint_ of the `ProviderModule` without all the overhead of instantiating the actual module.
+
+```ts
+const GarageModuleDefinition = new ProviderModuleDefinition({ identifier: 'GarageModuleDefinition' });
+
+// You can always edit all the properties of the definition.
+
+GarageModuleDefinition.imports = [...GarageModuleDefinition.imports, PorscheModule, FerrariModuleDefinition];
+```
+
+#### Feed to `new ProviderModule`
+
+```ts
+const GarageModule = new ProviderModule(GarageModuleDefinition);
+```
+
+#### Feed to `lazyImport`
+
+```ts
+ExistingModule.lazyImport(GarageModuleDefinition);
+```
+
+> **Note:** _Providing it to the `lazyImport` method will automatically instantiate a new `ProviderModule` on-the-fly!_
+
+#### Why not just use the `ProviderModuleOptions` interface?
+
+That's a very good question! It means that you understood that the `ProviderModuleDefinition` is actually a `class` wrapper of the `ProviderModuleOptions`.
+
+Theoretically you _can_ use a _plain_ `object` having the `ProviderModuleOptions` interface, however, the `ProviderModuleOptions` interface purpose is solely to _expose/shape_ the options with which a module can be instantiated, while the `ProviderModuleDefinition` purpose is to _define_ the actual `ProviderModule` _blueprint_.
 
 ### Lazy `imports` and `exports`
 

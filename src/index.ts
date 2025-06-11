@@ -4,7 +4,7 @@ export * from './errors';
 export * from './enums';
 export * from './helpers';
 
-export { GlobalContainer, AppModule, GlobalAppModule, ProviderModule } from './core';
+export { GlobalContainer, AppModule, GlobalAppModule, ProviderModule, ProviderModuleDefinition } from './core';
 
 export type {
   IAppModule,
@@ -12,6 +12,7 @@ export type {
   ProviderModuleOptions,
   ProviderModuleOptionsInternal,
   IProviderModule,
+  IProviderModuleDefinition,
   IProviderModuleNaked,
   ExportsList,
   ProviderModuleGetManySignature,
@@ -24,6 +25,7 @@ export type {
   ProviderIdentifier,
   ProviderOptions,
   ProviderScopeOption,
-  LazyInitOptions,
+  ProviderModuleOrDefinition,
+  InternalInitOptions,
   OnEvent,
 } from './types';

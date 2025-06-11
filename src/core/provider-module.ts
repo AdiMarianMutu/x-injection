@@ -8,15 +8,18 @@ import {
 } from '../errors';
 import { injectionScopeToBindingScope, isPlainObject, ProviderModuleHelpers, ProviderTokenHelpers } from '../helpers';
 import type {
+  InternalInitOptions,
   IProviderModule,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  IProviderModuleDefinition,
   IProviderModuleNaked,
-  LazyInitOptions,
   ModuleIdentifier,
   OnGetEffects,
   ProviderModuleGetManyParam,
   ProviderModuleGetManySignature,
   ProviderModuleOptions,
   ProviderModuleOptionsInternal,
+  ProviderModuleOrDefinition,
   ProviderToken,
 } from '../types';
 import { ProviderModuleUtils } from '../utils';
@@ -27,6 +30,8 @@ import { GlobalContainer } from './global-container';
  * For most applications, you'll likely have multiple modules, each encapsulating a closely related set of capabilities.
  *
  * _See {@link ProviderModuleOptions | ProviderModuleOptions}_.
+ *
+ * **Note:** _Check also the {@link IProviderModuleDefinition}._
  *
  * @example
  * ```ts
@@ -96,36 +101,20 @@ export class ProviderModule implements IProviderModule {
   protected exports!: IProviderModuleNaked['exports'];
   protected registeredSideEffects!: IProviderModuleNaked['registeredSideEffects'];
 
-  constructor({
-    identifier,
-    imports,
-    providers,
-    exports,
-    defaultScope,
-    markAsGlobal,
-    onReady,
-    onDispose,
-    ..._internalParams
-  }: ProviderModuleOptions) {
-    const internalParams = _internalParams as ProviderModuleOptionsInternal;
+  constructor(options: ProviderModuleOptions | IProviderModuleDefinition) {
+    const { options: opts, internalOptions } = ProviderModuleHelpers.getOptionsOrModuleDefinitionOptions(options);
 
-    this.identifier = this.setIdentifier(identifier);
-    this.isDisposed = internalParams.isDisposed ?? false;
-    this.isAppModule = internalParams.isAppModule ?? false;
+    this.identifier = this.setIdentifier(opts.identifier);
+    this.isDisposed = internalOptions.isDisposed ?? false;
+    this.isAppModule = internalOptions.isAppModule ?? false;
 
     // If this module is the `AppModule`,
-    // the initialization will be done when the `IProviderModuleNaked._lazyInit` method is invoked.
+    // the initialization will be done when the `IProviderModuleNaked._internalInit` method is invoked.
     if (this.isAppModule) return;
 
-    this._lazyInit({
-      markAsGlobal,
-      imports,
-      providers,
-      exports,
-      defaultScope,
-      onReady,
-      onDispose,
-      ..._internalParams,
+    this._internalInit({
+      ...opts,
+      ...internalOptions,
     });
   }
 
@@ -143,7 +132,7 @@ export class ProviderModule implements IProviderModule {
     }) as any;
   }
 
-  lazyImport(...modules: IProviderModule[]): void {
+  lazyImport(...modules: ProviderModuleOrDefinition[]): void {
     this.injectImportedModules(modules as ProviderModule[]);
   }
 
@@ -174,6 +163,7 @@ export class ProviderModule implements IProviderModule {
   }
 
   toString(): string {
+    /* istanbul ignore next */
     return (typeof this.identifier === 'symbol' ? this.identifier.description : this.identifier) ?? 'Unknown';
   }
 
@@ -198,13 +188,19 @@ export class ProviderModule implements IProviderModule {
     }
   }
 
-  private injectImportedModules(importedModules?: ProviderModule[]): void {
+  private injectImportedModules(importedModules?: ProviderModuleOrDefinition[]): void {
     if (!importedModules || importedModules.length === 0) return;
 
-    importedModules.forEach((importedModule) => {
-      if (importedModule.toString() === 'GlobalAppModule') {
+    importedModules.forEach((importedModuleOrDefinition) => {
+      if (importedModuleOrDefinition.toString() === 'GlobalAppModule') {
         throw new InjectionProviderModuleError(this, `The 'GlobalAppModule' can't be imported!`);
       }
+
+      const importedModule = (
+        ProviderModuleHelpers.isModuleDefinition(importedModuleOrDefinition)
+          ? new ProviderModule(importedModuleOrDefinition.getDefinition())
+          : importedModuleOrDefinition
+      ) as ProviderModule;
 
       importedModule.exports.forEach((exp) => {
         const exportable = ProviderModuleHelpers.tryStaticOrLazyExportToStaticExport(this, exp);
@@ -247,6 +243,7 @@ export class ProviderModule implements IProviderModule {
         // method on an already unbound provider, causing it to throw an error.
         this._onUnbind(serviceIdentifier, () => {
           const effects = importedModule.registeredSideEffects.get(serviceIdentifier);
+          /* istanbul ignore next */
           if (!effects) return;
 
           effects.onUnbindEffects = effects.onUnbindEffects.filter(
@@ -332,6 +329,7 @@ export class ProviderModule implements IProviderModule {
     /* istanbul ignore next */
     if (!this.registeredSideEffects.has(serviceIdentifier)) return;
 
+    /* istanbul ignore next */
     const unbindEffects = this.registeredSideEffects.get(serviceIdentifier)?.onUnbindEffects ?? [];
     for (const effect of unbindEffects) {
       await effect.cb();
@@ -351,18 +349,22 @@ export class ProviderModule implements IProviderModule {
   /**
    * **Publicly visible when the instance is casted to {@link IProviderModuleNaked}.**
    *
-   * See {@link IProviderModuleNaked._lazyInit}.
+   * See {@link IProviderModuleNaked._internalInit}.
    */
-  protected _lazyInit({
-    markAsGlobal,
-    imports = [],
-    providers = [],
-    exports = [],
-    defaultScope = InjectionScope.Singleton,
-    onReady,
-    onDispose,
-    ..._internalParams
-  }: LazyInitOptions): IProviderModule {
+  protected _internalInit(options: InternalInitOptions | IProviderModuleDefinition): IProviderModule {
+    const {
+      options: {
+        markAsGlobal,
+        imports = [],
+        providers = [],
+        exports = [],
+        defaultScope = InjectionScope.Singleton,
+        onReady,
+        onDispose,
+      },
+      internalOptions,
+    } = ProviderModuleHelpers.getOptionsOrModuleDefinitionOptions(options as any);
+
     this.isMarkedAsGlobal = markAsGlobal ?? false;
     this.isDisposed = false;
     this.imports = imports;
@@ -372,8 +374,8 @@ export class ProviderModule implements IProviderModule {
     this.onReady = onReady;
     this.onDispose = onDispose;
 
-    this.container = this.prepareContainer({ ..._internalParams });
-    this.moduleUtils = new ProviderModuleUtils(this, _internalParams);
+    this.container = this.prepareContainer({ ...internalOptions });
+    this.moduleUtils = new ProviderModuleUtils(this, internalOptions);
     this.registeredSideEffects = new Map();
 
     this.injectImportedModules(this.imports as any);

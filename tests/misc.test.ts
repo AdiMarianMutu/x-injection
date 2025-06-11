@@ -49,7 +49,7 @@ describe('Misc', () => {
         useClass: EmptyService,
       };
 
-      m._lazyInit(
+      m._internalInit(
         ProviderModuleHelpers.buildInternalConstructorParams({
           identifier: 'm',
           providers: [PROVIDER],
@@ -65,7 +65,7 @@ describe('Misc', () => {
         useValue: new EmptyService(),
       };
 
-      m._lazyInit(
+      m._internalInit(
         ProviderModuleHelpers.buildInternalConstructorParams({
           identifier: 'm',
           providers: [PROVIDER],
@@ -81,7 +81,7 @@ describe('Misc', () => {
         useFactory: () => new EmptyService(),
       };
 
-      m._lazyInit(
+      m._internalInit(
         ProviderModuleHelpers.buildInternalConstructorParams({
           identifier: 'm',
           providers: [PROVIDER],
@@ -108,7 +108,7 @@ describe('Misc', () => {
         inject: [GlobalService, 'CONSTANT'],
       };
 
-      m._lazyInit(
+      m._internalInit(
         ProviderModuleHelpers.buildInternalConstructorParams({
           identifier: 'm',
           providers: [PROVIDER],

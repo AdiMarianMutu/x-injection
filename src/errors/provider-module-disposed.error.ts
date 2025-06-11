@@ -6,6 +6,6 @@ export class InjectionProviderModuleDisposedError extends InjectionProviderModul
   override name = InjectionProviderModuleDisposedError.name;
 
   constructor(module: IProviderModule) {
-    super(module, 'Has been disposed! You can re-initialize it by using the `_lazyInit` method.');
+    super(module, 'Has been disposed! You can re-initialize it by using the `_internalInit` method.');
   }
 }

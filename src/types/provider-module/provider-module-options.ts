@@ -4,18 +4,14 @@ import type { RequireAtLeastOne } from 'type-fest';
 import type { GlobalAppModule } from '../../core';
 import type { InjectionScope } from '../../enums';
 import type { DependencyProvider, ProviderToken } from '../provider-token';
-import type { IProviderModule } from './provider-module';
+import type { IProviderModule, ProviderModuleOrDefinition } from './provider-module';
 
 export interface ProviderModuleOptions {
   /** The module unique `ID`. */
   identifier: symbol | string;
 
-  /**
-   * Import additional {@link IProviderModule | modules} into _this_ module.
-   *
-   * **Note:** _Supports lazy imports, see {@link LazyImport}._
-   */
-  imports?: IProviderModule[];
+  /** Import additional {@link IProviderModule | modules} into _this_ module. */
+  imports?: ProviderModuleOrDefinition[];
 
   /** The {@link DependencyProvider | providers} that will be instantiated by the container and that may be shared at least across _this_ module. */
   providers?: DependencyProvider[];
@@ -78,7 +74,7 @@ export interface ProviderModuleOptionsInternal {
 }
 
 export type ExportsList = (StaticExport | LazyExport)[];
-export type StaticExport = ProviderToken | IProviderModule;
+export type StaticExport = ProviderToken | ProviderModuleOrDefinition;
 export type LazyExport = (
   /** The {@link IProviderModule | module} which is importing _this_ module. */
   importerModule: IProviderModule

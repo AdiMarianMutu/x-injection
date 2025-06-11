@@ -3,7 +3,7 @@ import type { Except } from 'type-fest';
 import type { IProviderModule, IProviderModuleNaked, LazyInitOptions } from './provider-module';
 
 export interface IAppModule extends Except<IProviderModule, 'isMarkedAsGlobal'> {
-  readonly __strict: AppModuleOptions['__strict'];
+  readonly _strict: AppModuleOptions['_strict'];
 
   /** Must be invoked _(only once during the application lifecycle)_ in order to provide the {@link options} to the module. */
   register<AsNaked extends boolean = false>(
@@ -26,5 +26,5 @@ export interface AppModuleOptions
    *
    * Defaults to `true`.
    */
-  __strict?: boolean;
+  _strict?: boolean;
 }

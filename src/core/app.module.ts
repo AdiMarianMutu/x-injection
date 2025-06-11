@@ -11,7 +11,7 @@ import { ProviderModule } from './provider-module';
  * **You shouldn't initialize a new instance of this class, please use the {@link AppModule} instance!**
  */
 export class GlobalAppModule extends ProviderModule implements IAppModule {
-  __strict: AppModuleOptions['__strict'];
+  _strict: AppModuleOptions['_strict'];
 
   private nakedModule = this as unknown as IProviderModuleNaked;
   private isLoaded = false;
@@ -32,7 +32,7 @@ export class GlobalAppModule extends ProviderModule implements IAppModule {
       throw new InjectionError(`The '${this.toString()}' has already been registered!`);
     }
 
-    this.__strict = options.__strict ?? true;
+    this._strict = options._strict ?? true;
 
     this.nakedModule._lazyInit(options);
 
@@ -59,7 +59,7 @@ export class GlobalAppModule extends ProviderModule implements IAppModule {
     list: ExportsList,
     isSecondaryImport = false
   ): void {
-    if (!this.__strict) return;
+    if (!this._strict) return;
 
     list.forEach((m) => {
       const module = ProviderModuleHelpers.tryStaticOrLazyExportToStaticExport(this, m) as IProviderModuleNaked;

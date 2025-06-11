@@ -83,7 +83,7 @@ describe('AppModule', () => {
     it('should NOT throw when importing modules not marked as global', () => {
       expect(() => {
         new GlobalAppModule().register({
-          __strict: false,
+          _strict: false,
           imports: [
             new ProviderModule({
               identifier: 'm',

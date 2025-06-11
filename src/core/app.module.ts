@@ -47,7 +47,7 @@ export class GlobalAppModule extends ProviderModule implements IAppModule {
   override async dispose(): Promise<void> {
     this.isLoaded = false;
 
-    super.dispose();
+    await super.dispose();
   }
 
   private checkIfRegisteredModulesHaveGlobalMark(

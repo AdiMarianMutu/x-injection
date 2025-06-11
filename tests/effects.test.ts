@@ -1,5 +1,5 @@
 import { InjectionProviderModuleError, ProviderModule } from '../src';
-import { EmptyService, EmptyService2, FilledService } from './setup';
+import { EmptyService, EmptyService2 } from './setup';
 
 describe('Effects', () => {
   const mOptions = {

@@ -15,7 +15,7 @@ export interface ProviderModuleOptions {
    *
    * **Note:** _Supports lazy imports, see {@link LazyImport}._
    */
-  imports?: ImportsList;
+  imports?: IProviderModule[];
 
   /** The {@link DependencyProvider | providers} that will be instantiated by the container and that may be shared at least across _this_ module. */
   providers?: DependencyProvider[];
@@ -76,10 +76,6 @@ export interface ProviderModuleOptionsInternal {
   /** Can be used to manually provide a {@link Container} instance. */
   container?: () => Container;
 }
-
-export type ImportsList = (StaticImport | LazyImport)[];
-export type StaticImport = IProviderModule;
-export type LazyImport = () => StaticImport;
 
 export type ExportsList = (StaticExport | LazyExport)[];
 export type StaticExport = ProviderToken | IProviderModule;

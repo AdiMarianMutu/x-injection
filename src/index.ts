@@ -13,7 +13,6 @@ export type {
   ProviderModuleOptionsInternal,
   IProviderModule,
   IProviderModuleNaked,
-  ImportsList,
   ExportsList,
   ProviderModuleGetManySignature,
   ProviderModuleGetManyParam,

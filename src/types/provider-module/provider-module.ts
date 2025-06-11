@@ -46,6 +46,13 @@ export interface IProviderModule {
   ): ProviderModuleGetManySignature<D>;
 
   /**
+   * Can be used to _lazily_ import one or more {@link IProviderModule | modules} into _this_ module.
+   *
+   * @param module The `module` to be imported.
+   */
+  lazyImport(...module: IProviderModule[]): void;
+
+  /**
    * Casts the current module type to the {@link IProviderModuleNaked} type.
    *
    * **Internally used and for testing purposes!**

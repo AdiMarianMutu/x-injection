@@ -1,5 +1,5 @@
 import { InjectionScope, ProviderModule } from '../src';
-import { EmptyService, EmptyService2 } from './setup';
+import { EmptyService, EmptyService2, EmptyService3 } from './setup';
 
 describe('Imports', () => {
   afterEach(() => jest.clearAllMocks());
@@ -64,44 +64,32 @@ describe('Imports', () => {
 
   describe('Lazy', () => {
     describe('Imports', () => {
-      const m = new ProviderModule({
-        identifier: 'm',
-        providers: [EmptyService],
-        exports: [EmptyService],
-      });
-
       it('should succeed', () => {
-        const mm = new ProviderModule({
-          identifier: 'mm',
-          imports: [() => m],
+        const m = new ProviderModule({
+          identifier: 'm',
+          providers: [EmptyService],
+          exports: [EmptyService],
         }).toNaked();
 
-        expect(mm.__isCurrentBound(EmptyService)).toBe(true);
-      });
-
-      it('should import nested lazy exported module', () => {
         const mm = new ProviderModule({
           identifier: 'mm',
-          imports: [() => m],
-          exports: [
-            (importerModule) => {
-              if (importerModule.toString() === 'mmm') return m;
-            },
-          ],
-        }).toNaked();
+          providers: [EmptyService2],
+          exports: [EmptyService2],
+        });
 
         const mmm = new ProviderModule({
           identifier: 'mmm',
-          imports: [() => mm],
-        }).toNaked();
+          providers: [EmptyService3],
+          exports: [EmptyService3],
+        });
 
-        const mmmm = new ProviderModule({
-          identifier: 'mmmm',
-          imports: [() => mmm],
-        }).toNaked();
+        m.lazyImport(mm, mmm);
 
-        expect(mmm.__isCurrentBound(EmptyService)).toBe(true);
-        expect(mmmm.__isCurrentBound(EmptyService)).toBe(false);
+        expect(m.__isCurrentBound(EmptyService2)).toBe(true);
+        expect(m.get(EmptyService2) instanceof EmptyService2).toBe(true);
+
+        expect(m.__isCurrentBound(EmptyService3)).toBe(true);
+        expect(m.get(EmptyService3) instanceof EmptyService3).toBe(true);
       });
     });
 

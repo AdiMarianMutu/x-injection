@@ -1,11 +1,9 @@
 import type {
   IProviderModule,
   LazyExport,
-  LazyImport,
   ProviderModuleOptions,
   ProviderModuleOptionsInternal,
   StaticExport,
-  StaticImport,
 } from '../types';
 import { isFunction } from './is-function';
 
@@ -16,11 +14,8 @@ export namespace ProviderModuleHelpers {
     return params as ProviderModuleOptions;
   }
 
-  export function isLazyImport(imp: StaticImport | LazyImport): imp is LazyImport {
-    return isFunction(imp);
-  }
 
-  export function isLazyExport(exp: StaticExport | LazyExport): exp is LazyExport {
+  export function isLazyExport(exp: any): exp is LazyExport {
     return isFunction(exp);
   }
 

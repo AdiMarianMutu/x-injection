@@ -5,7 +5,6 @@ import type { InjectionScope } from '../../enums';
 import type { ProviderModuleUtils } from '../../utils';
 import type {
   ExportsList,
-  ImportsList,
   IProviderModule,
   ModuleIdentifier,
   ProviderModuleOptions,
@@ -37,7 +36,7 @@ export interface IProviderModuleNaked extends IProviderModule {
   readonly providers: DependencyProvider[];
 
   /** What is exported into this module. */
-  readonly imports: ImportsList;
+  readonly imports: IProviderModule[];
 
   /** What is exported from this module. */
   readonly exports: ExportsList;

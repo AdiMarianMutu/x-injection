@@ -143,6 +143,10 @@ export class ProviderModule implements IProviderModule {
     }) as any;
   }
 
+  lazyImport(...modules: IProviderModule[]): void {
+    this.injectImportedModules(modules as ProviderModule[]);
+  }
+
   toNaked(): IProviderModuleNaked {
     return this as any;
   }
@@ -194,15 +198,13 @@ export class ProviderModule implements IProviderModule {
     }
   }
 
-  private injectImportedModules(importedModules?: (ProviderModule | (() => ProviderModule))[]): void {
+  private injectImportedModules(importedModules?: ProviderModule[]): void {
     if (!importedModules || importedModules.length === 0) return;
 
     importedModules.forEach((importedModule) => {
       if (importedModule.toString() === 'GlobalAppModule') {
         throw new InjectionProviderModuleError(this, `The 'GlobalAppModule' can't be imported!`);
       }
-
-      importedModule = ProviderModuleHelpers.isLazyImport(importedModule) ? importedModule() : importedModule;
 
       importedModule.exports.forEach((exp) => {
         const exportable = ProviderModuleHelpers.tryStaticOrLazyExportToStaticExport(this, exp);

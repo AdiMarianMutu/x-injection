@@ -296,23 +296,22 @@ const [serviceC, serviceD] = BigModule.getMany<[ServiceC, ServiceD]>(SERVICE_TOK
 
 You can also lazy import or export `providers`/`modules`, usually you don't need this feature, but there may be some advanced cases where you may want to be able to do so.
 
-> The lazy callback defers the actual module resolution from the moment of module definition to the moment the container processes imports at run-time, this may help in breaking immediate circular reference chain under some circumstances.
+> The lazy nature defers the actual module resolution, this may help in breaking immediate circular reference chain under some circumstances.
 
 #### Imports
 
-You can lazily `import` a `module` by providing a `callback` _(it can also be an `async` callback)_ as shown below:
+You can lazily `import` a `module` by invoking the [lazyImport](https://adimarianmutu.github.io/x-injection/interfaces/IProviderModule.html#lazyimport) `method` at any time in your code.
 
 ```ts
-const BankBranchModule = new ProviderModule({
-  identifier: 'BankBranchModule',
-  providers: [BankBranchService],
-  exports: [BankBranchService],
+const GarageModule = new ProviderModule({
+  identifier: 'GarageModule',
+  // Eager imports happen at module initialization
+  imports: [FerrariModule, PorscheModule, ...]
 });
 
-const BankModule = new ProviderModule({
-  identifier: 'BankModule',
-  imports: [..., () => { return BankBranchModule }]
-});
+// Later in your code
+
+GarageModule.lazyImport(LamborghiniModule, BugattiModule, ...);
 ```
 
 #### Exports
@@ -328,7 +327,7 @@ const SecureBankBranchModule = new ProviderModule({
 
 const BankModule = new ProviderModule({
   identifier: 'BankModule',
-  imports: [..., () => { return BankBranchModule }],
+  imports: [SecureBankBranchModule],
   exports: [..., (importerModule) => {
     // When the module having the identifier `UnknownBankModule` imports the `BankModule`
     // it'll not be able to also import the `SecureBankBranchModule` as we are not returning it here.

@@ -64,7 +64,7 @@ export class GlobalAppModule extends ProviderModule implements IAppModule {
     list.forEach((m) => {
       const module = ProviderModuleHelpers.tryStaticOrLazyExportToStaticExport(this, m) as IProviderModuleNaked;
 
-      if (!(module instanceof ProviderModule)) return;
+      if (!(module instanceof ProviderModule) && !ProviderModuleHelpers.isModuleDefinition(module)) return;
 
       if (module.isMarkedAsGlobal) {
         GlobalModuleRegister.delete(module);

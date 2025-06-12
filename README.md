@@ -98,7 +98,9 @@ import { AppModule } from '@adimm/x-injection';
 AppModule.register({});
 ```
 
-> **Note:** You must call `AppModule.register()` even if you have no global providers. Passing an empty object `{}` is valid.
+> [!NOTE]
+>
+> _You must invoke `AppModule.register()` even if you have no global providers. Passing an empty object `{}` to the method is valid._
 
 ### Registering Global Providers
 
@@ -142,9 +144,11 @@ AppModule.register({
 });
 ```
 
-> **Note:** _All modules which are imported into the `AppModule` must have the [markAsGlobal](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#markasglobal) option set to `true`, otherwise the [InjectionProviderModuleGlobalMarkError](https://adimarianmutu.github.io/x-injection/classes/InjectionProviderModuleGlobalMarkError.html) exception will be thrown!_
+> [!NOTE]
 >
-> **Note2:** _An [InjectionProviderModuleGlobalMarkError](https://adimarianmutu.github.io/x-injection/classes/InjectionProviderModuleGlobalMarkError.html) exception will be thrown also when importing into the `AppModule` a module which does **not** have the [markAsGlobal](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#markasglobal) flag option!_
+> _All modules which are imported into the `AppModule` must have the [markAsGlobal](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#markasglobal) option set to `true`, otherwise the [InjectionProviderModuleGlobalMarkError](https://adimarianmutu.github.io/x-injection/classes/InjectionProviderModuleGlobalMarkError.html) exception will be thrown!_
+>
+> _An [InjectionProviderModuleGlobalMarkError](https://adimarianmutu.github.io/x-injection/classes/InjectionProviderModuleGlobalMarkError.html) exception will be thrown also when importing into the `AppModule` a module which does **not** have the [markAsGlobal](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#markasglobal) flag option!_
 
 ### Injection Scope
 
@@ -172,7 +176,9 @@ The below list shows them in order of priority _(highest to lowest)_, meaning th
    });
    ```
 
-> **Note:** _Imported modules/providers retain their original `InjectionScope`!_
+> [!NOTE]
+>
+> _Imported modules/providers retain their original `InjectionScope`!_
 
 #### Singleton
 
@@ -266,10 +272,10 @@ export const DatabaseModule = new ProviderModule({
         // It is invoked right before the dispose process begins.
         // This means that the `module` container is still available to be used.
 
-    const databaseService = module.get(DatabaseService);
+        const databaseService = module.get(DatabaseService);
 
-    databaseService.closeConnection();
-  },
+        databaseService.closeConnection();
+      },
       after: async (module) => {
         // It is invoked right after the dispose process ended.
         // This means that the `module` container is not available anymore.
@@ -294,7 +300,9 @@ AppModule.register({
 });
 ```
 
-> **Note:** The `AppModule.register` method can be invoked only _once_! _(You may re-invoke it only after the module has been disposed)_ Preferably during your application bootstrapping process.
+> [!NOTE]
+>
+> The `AppModule.register` method can be invoked only _once_! _(You may re-invoke it only after the module has been disposed)_ Preferably during your application bootstrapping process.
 
 From now on, the `AppModule` container has the references of the `DatabaseService` and the `SessionService`.
 
@@ -338,7 +346,9 @@ const GarageModule = new ProviderModule(GarageModuleDefinition);
 ExistingModule.lazyImport(GarageModuleDefinition);
 ```
 
-> **Note:** _Providing it to the `lazyImport` method will automatically instantiate a new `ProviderModule` on-the-fly!_
+> [!NOTE]
+>
+> _Providing it to the `lazyImport` method will automatically instantiate a new `ProviderModule` on-the-fly!_
 
 #### Why not just use the `ProviderModuleOptions` interface?
 
@@ -421,7 +431,9 @@ By default the `AppModule` runs in "strict mode", a built-in mode which enforces
 
 When invoking the [AppModule.register](https://adimarianmutu.github.io/x-injection/interfaces/IAppModule.html#register-1) `method` you can set the [\_strict](https://adimarianmutu.github.io/x-injection/interfaces/AppModuleOptions.html#_strict) property to `false` in order to permanentely disable those set of built-in rules.
 
-> **Note:** _Do not open an `issue` if a bug or edge-case is caused by having the `strict` property disabled!_
+> [!WARNING]
+>
+> _Do not open an `issue` if a bug or edge-case is caused by having the `strict` property disabled!_
 
 #### Why you should not turn it off:
 

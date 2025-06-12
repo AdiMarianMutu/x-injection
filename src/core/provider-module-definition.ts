@@ -67,6 +67,17 @@ export class ProviderModuleDefinition implements IProviderModuleDefinition {
     };
   }
 
+  clone(definition?: Partial<ProviderModuleOptions>): IProviderModuleDefinition {
+    const currentDefinition = this.getDefinition();
+
+    if (!definition) return new ProviderModuleDefinition(currentDefinition);
+
+    return new ProviderModuleDefinition({
+      ...currentDefinition,
+      ...definition,
+    });
+  }
+
   toString(): string {
     /* istanbul ignore next */
     return (typeof this.identifier === 'symbol' ? this.identifier.description : this.identifier) ?? 'Unknown';

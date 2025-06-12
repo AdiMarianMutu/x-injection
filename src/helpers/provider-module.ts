@@ -35,7 +35,15 @@ export namespace ProviderModuleHelpers {
     if (isModuleDefinition(optionsOrDefinition)) {
       const ip = internalParams as any;
 
+      // [TO-DO]: Find a better way to handle this as it is confusing
+      // and we may also forget to update this `delete` operation list.
+      //
+      // This is done because the `ProviderModule` constructor can accept both
+      // the `ProviderModuleOptionsInternal` plain object and `ProviderModuleDefinition` instance.
+      // So we make sure to delete from the remaining properties (the `internalParams` spread object)
+      // the properties/methods of the `ProviderModuleDefinition` instance.
       delete ip['getDefinition'];
+      delete ip['clone'];
       delete ip['toString'];
     }
 

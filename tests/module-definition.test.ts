@@ -38,4 +38,28 @@ describe('ProviderModuleDefinition', () => {
 
     expect(m.__isCurrentBound(EmptyService3)).toBe(true);
   });
+
+  it('should clone a definition', () => {
+    const mdef = new ProviderModuleDefinition({
+      identifier: 'mdef',
+      providers: [EmptyService],
+    });
+
+    const mdefClone = mdef.clone();
+
+    expect(mdefClone.providers).toEqual(mdef.providers);
+  });
+
+  it('should clone a definition and overwrite it', () => {
+    const mdef = new ProviderModuleDefinition({
+      identifier: 'mdef',
+      providers: [EmptyService],
+    });
+
+    const mdefClone = mdef.clone({
+      providers: [{ provide: EmptyService, useClass: EmptyService2 }],
+    });
+
+    expect(mdefClone.providers).not.toEqual(mdef.providers);
+  });
 });

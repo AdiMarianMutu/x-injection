@@ -261,10 +261,21 @@ export const DatabaseModule = new ProviderModule({
 
     // Additional initialization...
   },
-  onDispose: async (module) => {
+  onDispose: () => {
+    return {
+      before: async (module) => {
+        // It is invoked right before the dispose process begins.
+        // This means that the `module` container is still available to be used.
+
     const databaseService = module.get(DatabaseService);
 
     databaseService.closeConnection();
+  },
+      after: async (module) => {
+        // It is invoked right after the dispose process ended.
+        // This means that the `module` container is not available anymore.
+      },
+    };
   },
 });
 

@@ -19,7 +19,7 @@ describe('AppModule', () => {
 
   it('should have a bound container', () => {
     expect(TestAppModule.container).toBeDefined();
-    expect(TestAppModule.container instanceof Container).toBe(true);
+    expect(TestAppModule.container).toBeInstanceOf(Container);
   });
 
   it('should have the `GlobalService` bound', () => {

@@ -57,7 +57,7 @@ describe('Imports', () => {
       imports: [mm],
     });
 
-    expect(mmm.get(EmptyService) instanceof EmptyService).toBe(true);
+    expect(mmm.get(EmptyService)).toBeInstanceOf(EmptyService);
     expect(mmm.get(EmptyService)).not.toBe(mm.get(EmptyService));
     expect(mm.get(EmptyService)).not.toBe(m.get(EmptyService));
   });
@@ -86,10 +86,10 @@ describe('Imports', () => {
         m.lazyImport(mm, mmm);
 
         expect(m.__isCurrentBound(EmptyService2)).toBe(true);
-        expect(m.get(EmptyService2) instanceof EmptyService2).toBe(true);
+        expect(m.get(EmptyService2)).toBeInstanceOf(EmptyService2);
 
         expect(m.__isCurrentBound(EmptyService3)).toBe(true);
-        expect(m.get(EmptyService3) instanceof EmptyService3).toBe(true);
+        expect(m.get(EmptyService3)).toBeInstanceOf(EmptyService3);
       });
     });
 
@@ -119,7 +119,7 @@ describe('Imports', () => {
           imports: [lm],
         });
 
-        expect(m.get(EmptyService2) instanceof EmptyService2).toBe(true);
+        expect(m.get(EmptyService2)).toBeInstanceOf(EmptyService2);
         expect(() => mm.get(EmptyService2)).toThrow();
       });
 
@@ -134,7 +134,7 @@ describe('Imports', () => {
           imports: [m],
         });
 
-        expect(m.get(EmptyService2) instanceof EmptyService2).toBe(true);
+        expect(m.get(EmptyService2)).toBeInstanceOf(EmptyService2);
         expect(() => mm.get(EmptyService2)).toThrow();
       });
     });

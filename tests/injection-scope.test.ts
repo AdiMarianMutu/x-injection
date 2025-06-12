@@ -23,7 +23,7 @@ describe('Injection Scope', () => {
         identifier: 'm',
       });
 
-      expect(m.get(GlobalService) instanceof GlobalService).toBe(true);
+      expect(m.get(GlobalService)).toBeInstanceOf(GlobalService);
     });
   });
 

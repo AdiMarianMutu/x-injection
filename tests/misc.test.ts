@@ -20,7 +20,7 @@ describe('Misc', () => {
   it('should be able to use `getMany`', () => {
     const [globalService, constant] = TestAppModule.getMany(GlobalService, 'CONSTANT');
 
-    expect(globalService instanceof GlobalService).toBe(true);
+    expect(globalService).toBeInstanceOf(GlobalService);
     expect(constant).toBe('22.03.2013');
   });
 
@@ -56,7 +56,7 @@ describe('Misc', () => {
         })
       );
 
-      expect(m.get(PROVIDER.provide) instanceof EmptyService).toBe(true);
+      expect(m.get(PROVIDER.provide)).toBeInstanceOf(EmptyService);
     });
 
     it('should resolve a `ProviderValueToken`', () => {
@@ -72,7 +72,7 @@ describe('Misc', () => {
         })
       );
 
-      expect(m.get(PROVIDER.provide) instanceof EmptyService).toBe(true);
+      expect(m.get(PROVIDER.provide)).toBeInstanceOf(EmptyService);
     });
 
     it('should resolve a `ProviderFactoryToken`', () => {
@@ -88,7 +88,7 @@ describe('Misc', () => {
         })
       );
 
-      expect(m.get(PROVIDER.provide) instanceof EmptyService).toBe(true);
+      expect(m.get(PROVIDER.provide)).toBeInstanceOf(EmptyService);
     });
 
     it('should resolve a `ProviderFactoryToken` with `inject` param', () => {
@@ -117,9 +117,9 @@ describe('Misc', () => {
 
       const d = m.get(PROVIDER.provide);
 
-      expect(d.globalService instanceof GlobalService).toBe(true);
+      expect(d.globalService).toBeInstanceOf(GlobalService);
       expect(d.constant).toBe('22.03.2013');
-      expect(d.emptyService instanceof EmptyService).toBe(true);
+      expect(d.emptyService).toBeInstanceOf(EmptyService);
     });
   });
 

@@ -88,7 +88,7 @@ export class ProviderModule implements IProviderModule {
   isDisposed: boolean = false;
 
   readonly identifier: ModuleIdentifier;
-  isMarkedAsGlobal: boolean = false;
+  isGlobal: boolean = false;
 
   protected isAppModule: IProviderModuleNaked['isAppModule'];
   protected instantiatedFromDefinition: IProviderModuleNaked['instantiatedFromDefinition'];
@@ -200,8 +200,8 @@ export class ProviderModule implements IProviderModule {
 
       // If the current module is marked as global
       // then let's import it into the `AppModule` automatically in order to mimic NestJS's behavior.
-      if (this.shouldBeImportedIntoAppModuleFromScopedModule(importedModuleOrDefinition)) {
-        this.importIntoAppModuleFromScopedModule(importedModuleOrDefinition);
+      if (!this.isAppModule && importedModuleOrDefinition.isGlobal) {
+        this.moduleUtils.appModule._importWithoutSecondaryImportCheck(importedModuleOrDefinition);
 
         return;
       }
@@ -267,24 +267,6 @@ export class ProviderModule implements IProviderModule {
         });
       });
     });
-  }
-
-  private shouldBeImportedIntoAppModuleFromScopedModule(moduleOrDefinition: ProviderModuleOrDefinition): boolean {
-    if (this.isAppModule) return false;
-
-    const isMarkedAsGlobal = ProviderModuleHelpers.isModuleDefinition(moduleOrDefinition)
-      ? moduleOrDefinition.markAsGlobal
-      : moduleOrDefinition.isMarkedAsGlobal;
-
-    /* istanbul ignore next */
-    return isMarkedAsGlobal ?? false;
-  }
-
-  private importIntoAppModuleFromScopedModule(moduleOrDefinition: ProviderModuleOrDefinition): void {
-    /* istanbul ignore next */
-    if (this.isAppModule) return;
-
-    this.moduleUtils.appModule.lazyImport(moduleOrDefinition);
   }
 
   private injectProviders(): void {
@@ -387,7 +369,7 @@ export class ProviderModule implements IProviderModule {
   protected _internalInit(options: InternalInitOptions | IProviderModuleDefinition): IProviderModule {
     const {
       options: {
-        markAsGlobal,
+        isGlobal,
         imports = [],
         providers = [],
         exports = [],
@@ -398,7 +380,7 @@ export class ProviderModule implements IProviderModule {
       internalOptions,
     } = ProviderModuleHelpers.getOptionsOrModuleDefinitionOptions(options as any);
 
-    this.isMarkedAsGlobal = markAsGlobal ?? false;
+    this.isGlobal = isGlobal ?? false;
     this.isDisposed = false;
     this.imports = imports;
     this.providers = providers;

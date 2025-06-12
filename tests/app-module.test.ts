@@ -55,7 +55,7 @@ describe('AppModule', () => {
     it('should throw an error when a `module` is marked as `global` and not imported into `AppModule`', () => {
       new ProviderModule({
         identifier: 'm',
-        markAsGlobal: true,
+        isGlobal: true,
       });
 
       expect(() => {
@@ -69,7 +69,7 @@ describe('AppModule', () => {
           imports: [
             new ProviderModule({
               identifier: 'm',
-              markAsGlobal: false,
+              isGlobal: false,
             }),
           ],
         });
@@ -83,7 +83,7 @@ describe('AppModule', () => {
 
       const mm = new ProviderModule({
         identifier: 'mm',
-        markAsGlobal: true,
+        isGlobal: true,
         imports: [m],
         exports: [m],
       });
@@ -101,7 +101,7 @@ describe('AppModule', () => {
         ProviderModuleHelpers.buildInternalConstructorParams({
           appModule: () => am as any,
           identifier: 'm',
-          markAsGlobal: true,
+          isGlobal: true,
           providers: [EmptyService],
           exports: [EmptyService],
         })
@@ -118,7 +118,7 @@ describe('AppModule', () => {
         ProviderModuleHelpers.buildInternalConstructorParams({
           appModule: () => am as any,
           identifier: 'md',
-          markAsGlobal: true,
+          isGlobal: true,
           providers: [EmptyService],
           exports: [EmptyService],
         })
@@ -138,7 +138,7 @@ describe('AppModule', () => {
           imports: [
             new ProviderModule({
               identifier: 'm',
-              markAsGlobal: false,
+              isGlobal: false,
             }),
           ],
         });

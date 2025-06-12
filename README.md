@@ -38,7 +38,7 @@ xInjection&nbsp;<a href="https://www.npmjs.com/package/@adimm/x-injection" targe
   - [ProviderModuleNaked Interface](#providermodulenaked-interface)
   - [Strict Mode](#strict-mode)
     - [Why you should not turn it off:](#why-you-should-not-turn-it-off)
-      - [MarkAsGlobal](#markasglobal)
+      - [isGlobal](#isglobal)
 - [Unit Tests](#unit-tests)
 - [Documentation](#documentation)
 - [Conventions](#conventions)
@@ -140,7 +140,7 @@ const SECRET_TOKEN_2_PROVIDER = { provide: 'SECRET_TOKEN_2', useValue: 123 };
 
 const ConfigModuleDef = new ProviderModuleDefinition({
   identifier: 'ConfigModule',
-  markAsGlobal: true,
+  isGlobal: true,
   providers: [SECRET_TOKEN_PROVIDER, SECRET_TOKEN_2_PROVIDER],
   exports: [SECRET_TOKEN_PROVIDER, SECRET_TOKEN_2_PROVIDER],
 });
@@ -150,15 +150,49 @@ AppModule.register({
 });
 ```
 
-> [!NOTE]
->
-> _All modules which are imported into the `AppModule` must have the [markAsGlobal](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#markasglobal) option set to `true`, otherwise the [InjectionProviderModuleGlobalMarkError](https://adimarianmutu.github.io/x-injection/classes/InjectionProviderModuleGlobalMarkError.html) exception will be thrown!_
->
-> _An [InjectionProviderModuleGlobalMarkError](https://adimarianmutu.github.io/x-injection/classes/InjectionProviderModuleGlobalMarkError.html) exception will be thrown also when importing into the `AppModule` a module which does **not** have the [markAsGlobal](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#markasglobal) flag option!_
-
 > [!WARNING]
 >
 > _Importing a module marked as global into a scoped module will automatically import it into the `AppModule` rather than the scoped module itself!_
+
+This means that you can also do the following:
+
+```ts
+const FancyModuleDefinition = new ProviderModuleDefinition({
+  identifier: 'FancyModule',
+  isGlobal: true,
+  providers: [FancyService],
+  exports: [FancyService],
+});
+
+const ScopedModule = new ProviderModule({
+  identifier: 'ScopedModule',
+  // This `ScopedModule` will automatically "forward" the global `FancyModuleDefinition`
+  // exports to the `AppModule`.
+  imports: [FancyModuleDefinition],
+});
+
+AppModule.get(FancyService);
+// returns the global instance of the `FancyService` class
+```
+
+The above can also be written as:
+
+```ts
+const FancyModuleDefinition = new ProviderModuleDefinition({
+  identifier: 'FancyModule',
+  isGlobal: true,
+  providers: [FancyService],
+  exports: [FancyService],
+});
+
+AppModule.lazyImport(FancyModuleDefinition);
+```
+
+> [!NOTE]
+>
+> _All modules which are imported into the `AppModule` must have the [isGlobal](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#isGlobal) option set to `true`, otherwise the [InjectionProviderModuleGlobalMarkError](https://adimarianmutu.github.io/x-injection/classes/InjectionProviderModuleGlobalMarkError.html) exception will be thrown!_
+>
+> _An [InjectionProviderModuleGlobalMarkError](https://adimarianmutu.github.io/x-injection/classes/InjectionProviderModuleGlobalMarkError.html) exception will be thrown also when importing into the `AppModule` a module which does **not** have the [isGlobal](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#isGlobal) flag option!_
 
 ### Injection Scope
 
@@ -441,9 +475,9 @@ When invoking the [AppModule.register](https://adimarianmutu.github.io/x-injecti
 
 #### Why you should not turn it off:
 
-##### MarkAsGlobal
+##### isGlobal
 
-The [markAsGlobal](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#markasglobal) flag property is used to make sure that `modules` which should be registered directly into the `AppModule` are indeed provided to the the `imports` array of the `AppModule` and the the other way around, if a `module` is imported into the `AppModule` without having the `markAsGlobal` flag property set, it'll throw an error.
+When using the [isGlobal](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#isGlobal) property if a `module` is imported into the `AppModule` without having the `isGlobal` flag property set, it'll throw an error.
 
 This may look redundant, but it may save you _(and your team)_ some hours of debugging in understanding why some `providers` are able to make their way into other `modules`. As those `providers` are now acting as _global_ `providers`.
 
@@ -465,7 +499,7 @@ const AnotherScopedModule = new ProviderModule({
 
 const GlobalModule = new ProviderModule({
   identifier: 'GlobalModule',
-  markAsGlobal: true,
+  isGlobal: true,
   imports: [AnotherScopedModule],
 });
 
@@ -476,7 +510,7 @@ AppModule.register({
 
 At first glance you may not spot/understand the issue there, but because the `GlobalModule` _(which is then imported into the `AppModule`)_ is _directly_ importing the `AnotherScopedModule`, it means that _all_ the `providers` of the `AnotherScopedModule` and `ScopedModule` _(because `AnotherScopedModule` also imports `ScopedModule`)_ will become accessible through your entire app!
 
-Disabling `strict` mode removes this safeguard, allowing any module to be imported into the `AppModule` regardless of `markAsGlobal`, increasing risk of bugs by exposing yourself to the above example.
+Disabling `strict` mode removes this safeguard, allowing any module to be imported into the `AppModule` regardless of `isGlobal`, increasing risk of bugs by exposing yourself to the above example.
 
 ## Unit Tests
 

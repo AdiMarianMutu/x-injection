@@ -66,23 +66,35 @@ describe('Imports', () => {
     @Injectable()
     class ForwardedService {}
 
+    @Injectable()
+    class ForwardedService2 {}
+
     const md = new ProviderModuleDefinition({
       identifier: 'md',
-      markAsGlobal: true,
+      isGlobal: true,
       providers: [ForwardedService],
       exports: [ForwardedService],
     });
 
-    const m = new ProviderModule({
-      identifier: 'm',
-      // As we are importing the module definition marked as global,
-      // this scoped provider module will take care of importing it into the AppModule rather than into itself.
-      imports: [md],
+    const mmd = new ProviderModuleDefinition({
+      identifier: 'mmd',
+      isGlobal: true,
+      providers: [ForwardedService2],
+      exports: [ForwardedService2],
+    });
+
+    const mm = new ProviderModule({
+      identifier: 'mm',
+      imports: [md, mmd],
     }).toNaked();
 
-    expect(m.__isCurrentBound(ForwardedService)).toBe(false);
+    expect(mm.__isCurrentBound(ForwardedService)).toBe(false);
+    expect(mm.__isCurrentBound(ForwardedService2)).toBe(false);
+
     expect(TestAppModule.get(ForwardedService)).toBeInstanceOf(ForwardedService);
-    expect(TestAppModule.get(ForwardedService)).toBe(m.get(ForwardedService));
+    expect(TestAppModule.get(ForwardedService)).toBe(mm.get(ForwardedService));
+    expect(TestAppModule.get(ForwardedService2)).toBeInstanceOf(ForwardedService2);
+    expect(TestAppModule.get(ForwardedService2)).toBe(mm.get(ForwardedService2));
   });
 
   describe('Lazy', () => {

@@ -19,17 +19,8 @@ export namespace ProviderModuleHelpers {
   export function getOptionsOrModuleDefinitionOptions(
     optionsOrDefinition: ProviderModuleOptions | IProviderModuleDefinition
   ): { options: ProviderModuleOptions; internalOptions: ProviderModuleOptionsInternal } {
-    const {
-      identifier,
-      imports,
-      providers,
-      exports,
-      defaultScope,
-      markAsGlobal,
-      onReady,
-      onDispose,
-      ...internalParams
-    } = optionsOrDefinition;
+    const { identifier, imports, providers, exports, defaultScope, isGlobal, onReady, onDispose, ...internalParams } =
+      optionsOrDefinition;
     const internalOptions = internalParams as ProviderModuleOptionsInternal;
 
     if (isModuleDefinition(optionsOrDefinition)) {
@@ -54,7 +45,7 @@ export namespace ProviderModuleHelpers {
         providers,
         exports,
         defaultScope,
-        markAsGlobal,
+        isGlobal,
         onReady,
         onDispose,
       },

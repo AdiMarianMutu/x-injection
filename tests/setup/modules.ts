@@ -4,7 +4,7 @@ import { GlobalService } from './services';
 export const EmptyModule = new ProviderModule({ identifier: 'EmptyModule' }).toNaked();
 export const GlobalModule = new ProviderModule({
   identifier: 'GlobalModule',
-  markAsGlobal: true,
+  isGlobal: true,
   providers: [GlobalService],
   exports: [GlobalService],
 }).toNaked();

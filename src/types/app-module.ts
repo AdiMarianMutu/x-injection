@@ -2,7 +2,7 @@ import type { Except } from 'type-fest';
 
 import type { InternalInitOptions, IProviderModule, IProviderModuleNaked } from './provider-module';
 
-export interface IAppModule extends Except<IProviderModule, 'isMarkedAsGlobal'> {
+export interface IAppModule extends Except<IProviderModule, 'isGlobal'> {
   readonly _strict: AppModuleOptions['_strict'];
 
   /** Must be invoked _(only once during the application lifecycle)_ in order to provide the {@link options} to the module. */
@@ -14,7 +14,7 @@ export interface IAppModule extends Except<IProviderModule, 'isMarkedAsGlobal'> 
 }
 
 export interface AppModuleOptions
-  extends Except<InternalInitOptions, 'appModule' | 'markAsGlobal' | 'exports' | 'isDisposed'> {
+  extends Except<InternalInitOptions, 'appModule' | 'isGlobal' | 'exports' | 'isDisposed'> {
   /**
    * When set to `true` it'll enforce an opinionated set of rules
    * which _can help_ in avoiding common pitfalls which may otherwise produce

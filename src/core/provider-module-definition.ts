@@ -35,19 +35,19 @@ export class ProviderModuleDefinition implements IProviderModuleDefinition {
   providers: IProviderModuleDefinition['providers'];
   exports: IProviderModuleDefinition['exports'];
   defaultScope: IProviderModuleDefinition['defaultScope'];
-  markAsGlobal: IProviderModuleDefinition['markAsGlobal'];
+  isGlobal: IProviderModuleDefinition['isGlobal'];
   onReady: IProviderModuleDefinition['onReady'];
   onDispose: IProviderModuleDefinition['onDispose'];
 
   constructor(moduleOptions: ProviderModuleOptions) {
-    const { identifier, imports, providers, exports, defaultScope, markAsGlobal, onReady, onDispose } = moduleOptions;
+    const { identifier, imports, providers, exports, defaultScope, isGlobal, onReady, onDispose } = moduleOptions;
 
     this.identifier = identifier;
     this.imports = imports;
     this.providers = providers;
     this.exports = exports;
     this.defaultScope = defaultScope ?? InjectionScope.Singleton;
-    this.markAsGlobal = markAsGlobal ?? false;
+    this.isGlobal = isGlobal ?? false;
     this.onReady = onReady;
     this.onDispose = onDispose;
 
@@ -61,7 +61,7 @@ export class ProviderModuleDefinition implements IProviderModuleDefinition {
       providers: this.providers,
       exports: this.exports,
       defaultScope: this.defaultScope,
-      markAsGlobal: this.markAsGlobal,
+      isGlobal: this.isGlobal,
       onReady: this.onReady,
       onDispose: this.onDispose,
     };
@@ -84,7 +84,7 @@ export class ProviderModuleDefinition implements IProviderModuleDefinition {
   }
 
   private checkIfShouldBeAddedToTheGlobalRegister(): void {
-    if (!this.markAsGlobal) return;
+    if (!this.isGlobal) return;
 
     GlobalModuleRegister.add(this);
   }

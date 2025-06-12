@@ -66,6 +66,13 @@ export class GlobalAppModule extends ProviderModule implements IAppModule {
     await super.dispose();
   }
 
+  /** **Internally used, do not use!** */
+  _importWithoutSecondaryImportCheck(...modules: ProviderModuleOrDefinition[]): void {
+    this.checkIfRegisteredModulesHaveGlobalMark(this.nakedModule, modules, true);
+
+    super.lazyImport(...modules);
+  }
+
   private checkIfRegisteredModulesHaveGlobalMark(
     parentModule: IProviderModuleNaked,
     list: ExportsList,
@@ -79,9 +86,7 @@ export class GlobalAppModule extends ProviderModule implements IAppModule {
 
       if (!(module instanceof ProviderModule) && !isModuleDefinition) return;
 
-      const hasMarkedAsGlobal = isModuleDefinition ? module.markAsGlobal : module.isMarkedAsGlobal;
-
-      if (hasMarkedAsGlobal) {
+      if (module.isGlobal) {
         GlobalModuleRegister.delete(module);
 
         // This module may also export other modules

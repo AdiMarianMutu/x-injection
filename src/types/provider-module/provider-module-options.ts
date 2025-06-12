@@ -32,9 +32,9 @@ export interface ProviderModuleOptions {
   defaultScope?: InjectionScope;
 
   /**
-   * This option is only a _marker_, per se it doesn't do anything
-   * apart from marking this module as `global`.
    * When a module is marked as `global`, it means that it is expected to be _imported_ into the `AppModule`.
+   *
+   * **Note:** _Importing a `global` module into a `scoped` module will automatically import it into the `AppModule` rather than the scoped module itself!_
    *
    * Expect an exception to be thrown:
    * - If a `module` marked as global is **not** imported into the `AppModule`.
@@ -42,7 +42,7 @@ export interface ProviderModuleOptions {
    *
    * Defaults to `false`.
    */
-  markAsGlobal?: boolean;
+  isGlobal?: boolean;
 
   /**
    * Callback which will be invoked once the module container has been initialized

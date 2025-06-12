@@ -7,8 +7,8 @@ export interface IProviderModule {
   /** The module unique ID. */
   readonly identifier: ModuleIdentifier;
 
-  /** See {@link ProviderModuleOptions.markAsGlobal}. */
-  readonly isMarkedAsGlobal: ProviderModuleOptions['markAsGlobal'];
+  /** See {@link ProviderModuleOptions.isGlobal}. */
+  readonly isGlobal: ProviderModuleOptions['isGlobal'];
 
   readonly isDisposed: boolean;
 

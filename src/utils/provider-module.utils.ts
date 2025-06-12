@@ -27,11 +27,10 @@ export class ProviderModuleUtils {
     return this.moduleNaked.container;
   }
 
+  readonly appModule = AppModule;
   /** The parent {@link IProviderModule | ProviderModule} of `this` instance. */
   readonly module: IProviderModule;
   readonly moduleNaked: IProviderModuleNaked;
-
-  private readonly appModule = AppModule;
 
   constructor(module: IProviderModule, internalOptions: ProviderModuleOptionsInternal) {
     this.module = module;

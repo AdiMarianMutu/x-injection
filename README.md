@@ -156,6 +156,10 @@ AppModule.register({
 >
 > _An [InjectionProviderModuleGlobalMarkError](https://adimarianmutu.github.io/x-injection/classes/InjectionProviderModuleGlobalMarkError.html) exception will be thrown also when importing into the `AppModule` a module which does **not** have the [markAsGlobal](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#markasglobal) flag option!_
 
+> [!WARNING]
+>
+> _Importing a module marked as global into a scoped module will automatically import it into the `AppModule` rather than the scoped module itself!_
+
 ### Injection Scope
 
 There are mainly 3 first-class ways to set the [InjectionScope](https://adimarianmutu.github.io/x-injection/enums/InjectionScope.html) of a provider, and each one has an order priority.

@@ -1,5 +1,5 @@
-import { InjectionScope, ProviderModule } from '../src';
-import { EmptyService, EmptyService2, EmptyService3 } from './setup';
+import { Injectable, InjectionScope, ProviderModule, ProviderModuleDefinition } from '../src';
+import { EmptyService, EmptyService2, EmptyService3, TestAppModule } from './setup';
 
 describe('Imports', () => {
   afterEach(() => jest.clearAllMocks());
@@ -60,6 +60,29 @@ describe('Imports', () => {
     expect(mmm.get(EmptyService)).toBeInstanceOf(EmptyService);
     expect(mmm.get(EmptyService)).not.toBe(mm.get(EmptyService));
     expect(mm.get(EmptyService)).not.toBe(m.get(EmptyService));
+  });
+
+  it('should automatically import into the `AppModule` a module marked as global when imported into a `scoped` module', () => {
+    @Injectable()
+    class ForwardedService {}
+
+    const md = new ProviderModuleDefinition({
+      identifier: 'md',
+      markAsGlobal: true,
+      providers: [ForwardedService],
+      exports: [ForwardedService],
+    });
+
+    const m = new ProviderModule({
+      identifier: 'm',
+      // As we are importing the module definition marked as global,
+      // this scoped provider module will take care of importing it into the AppModule rather than into itself.
+      imports: [md],
+    }).toNaked();
+
+    expect(m.__isCurrentBound(ForwardedService)).toBe(false);
+    expect(TestAppModule.get(ForwardedService)).toBeInstanceOf(ForwardedService);
+    expect(TestAppModule.get(ForwardedService)).toBe(m.get(ForwardedService));
   });
 
   describe('Lazy', () => {

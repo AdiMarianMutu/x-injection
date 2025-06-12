@@ -198,6 +198,14 @@ export class ProviderModule implements IProviderModule {
         throw new InjectionProviderModuleError(this, `The 'GlobalAppModule' can't be imported!`);
       }
 
+      // If the current module is marked as global
+      // then let's import it into the `AppModule` automatically in order to mimic NestJS's behavior.
+      if (this.shouldBeImportedIntoAppModuleFromScopedModule(importedModuleOrDefinition)) {
+        this.importIntoAppModuleFromScopedModule(importedModuleOrDefinition);
+
+        return;
+      }
+
       const importedModule = (
         ProviderModuleHelpers.isModuleDefinition(importedModuleOrDefinition)
           ? new ProviderModule(
@@ -259,6 +267,24 @@ export class ProviderModule implements IProviderModule {
         });
       });
     });
+  }
+
+  private shouldBeImportedIntoAppModuleFromScopedModule(moduleOrDefinition: ProviderModuleOrDefinition): boolean {
+    if (this.isAppModule) return false;
+
+    const isMarkedAsGlobal = ProviderModuleHelpers.isModuleDefinition(moduleOrDefinition)
+      ? moduleOrDefinition.markAsGlobal
+      : moduleOrDefinition.isMarkedAsGlobal;
+
+    /* istanbul ignore next */
+    return isMarkedAsGlobal ?? false;
+  }
+
+  private importIntoAppModuleFromScopedModule(moduleOrDefinition: ProviderModuleOrDefinition): void {
+    /* istanbul ignore next */
+    if (this.isAppModule) return;
+
+    this.moduleUtils.appModule.lazyImport(moduleOrDefinition);
   }
 
   private injectProviders(): void {

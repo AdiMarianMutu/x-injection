@@ -31,7 +31,6 @@ xInjection&nbsp;<a href="https://www.npmjs.com/package/@adimm/x-injection" targe
   - [ProviderModuleDefinition](#providermoduledefinition)
     - [Feed to `new ProviderModule`](#feed-to-new-providermodule)
     - [Feed to `lazyImport`](#feed-to-lazyimport)
-    - [Why not just use the `ProviderModuleOptions` interface?](#why-not-just-use-the-providermoduleoptions-interface)
   - [Lazy `imports` and `exports`](#lazy-imports-and-exports)
     - [Imports](#imports)
     - [Exports](#exports)
@@ -42,6 +41,9 @@ xInjection&nbsp;<a href="https://www.npmjs.com/package/@adimm/x-injection" targe
       - [MarkAsGlobal](#markasglobal)
 - [Unit Tests](#unit-tests)
 - [Documentation](#documentation)
+- [Conventions](#conventions)
+  - [ProviderModule](#providermodule)
+  - [ProviderModuleDefinition](#providermoduledefinition-1)
 - [ReactJS Implementation](#reactjs-implementation)
 - [Contributing](#contributing)
 
@@ -98,7 +100,7 @@ import { AppModule } from '@adimm/x-injection';
 AppModule.register({});
 ```
 
-> [!NOTE]
+> [!WARNING]
 >
 > _You must invoke `AppModule.register()` even if you have no global providers. Passing an empty object `{}` to the method is valid._
 
@@ -136,7 +138,7 @@ You can also import entire modules into the `AppModule` like so:
 const SECRET_TOKEN_PROVIDER = { provide: 'SECRET_TOKEN', useValue: '123' };
 const SECRET_TOKEN_2_PROVIDER = { provide: 'SECRET_TOKEN_2', useValue: 123 };
 
-const ConfigModule = new ProviderModule({
+const ConfigModuleDef = new ProviderModuleDefinition({
   identifier: 'ConfigModule',
   markAsGlobal: true,
   providers: [SECRET_TOKEN_PROVIDER, SECRET_TOKEN_2_PROVIDER],
@@ -144,7 +146,7 @@ const ConfigModule = new ProviderModule({
 });
 
 AppModule.register({
-  imports: [ConfigModule],
+  imports: [ConfigModuleDef],
 });
 ```
 
@@ -174,7 +176,7 @@ The below list shows them in order of priority _(highest to lowest)_, meaning th
    ```
 3. By providing the [defaultScope](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#defaultscope) property when initializing a `ProviderModule`:
    ```ts
-   const RainModule = new ProviderModule({
+   const RainModuleDef = new ProviderModuleDef({
      identifier: 'RainModule',
      defaultScope: InjectionScope.Transient,
    });
@@ -261,7 +263,7 @@ export class SessionService {
   // Implementation...
 }
 
-export const DatabaseModule = new ProviderModule({
+export const DatabaseModuleDef = new ProviderModuleDefinitionDef({
   identifier: 'DatabaseModule',
   providers: [DatabaseService],
   exports: [DatabaseService],
@@ -288,7 +290,7 @@ export const DatabaseModule = new ProviderModule({
   },
 });
 
-export const SessionModule = new ProviderModule({
+export const SessionModuleDef = new ProviderModuleDefinition({
   identifier: 'SessionModule',
   defaultScope: InjectionScope.Request,
   providers: [SessionService],
@@ -300,13 +302,13 @@ Register these modules in your `AppModule`:
 
 ```ts
 AppModule.register({
-  imports: [DatabaseModule, SessionModule],
+  imports: [DatabaseModuleDef, SessionModuleDef],
 });
 ```
 
-> [!NOTE]
+> [!WARNING]
 >
-> The `AppModule.register` method can be invoked only _once_! _(You may re-invoke it only after the module has been disposed)_ Preferably during your application bootstrapping process.
+> The `AppModule.register` method can be invoked only _once_, preferably during your application bootstrapping process. _(you may re-invoke it only after the module has been disposed)_
 
 From now on, the `AppModule` container has the references of the `DatabaseService` and the `SessionService`.
 
@@ -354,12 +356,6 @@ ExistingModule.lazyImport(GarageModuleDefinition);
 >
 > _Providing it to the `lazyImport` method will automatically instantiate a new `ProviderModule` on-the-fly!_
 
-#### Why not just use the `ProviderModuleOptions` interface?
-
-That's a very good question! It means that you understood that the `ProviderModuleDefinition` is actually a `class` wrapper of the `ProviderModuleOptions`.
-
-Theoretically you _can_ use a _plain_ `object` having the `ProviderModuleOptions` interface, however, the `ProviderModuleOptions` interface purpose is solely to _expose/shape_ the options with which a module can be instantiated, while the `ProviderModuleDefinition` purpose is to _define_ the actual `ProviderModule` _blueprint_.
-
 ### Lazy `imports` and `exports`
 
 You can also lazy import or export `providers`/`modules`, usually you don't need this feature, but there may be some advanced cases where you may want to be able to do so.
@@ -387,15 +383,15 @@ GarageModule.lazyImport(LamborghiniModule, BugattiModule, ...);
 You can lazily `export` a `provider` or `module` by providing a `callback` _(it can also be an `async` callback)_ as shown below:
 
 ```ts
-const SecureBankBranchModule = new ProviderModule({
+const SecureBankBranchModuleDef = new ProviderModuleDef({
   identifier: 'SecureBankBranchModule',
   providers: [BankBranchService],
   exports: [BankBranchService],
 });
 
-const BankModule = new ProviderModule({
+const BankModuleDef = new ProviderModuleDef({
   identifier: 'BankModule',
-  imports: [SecureBankBranchModule],
+  imports: [SecureBankBranchModuleDef],
   exports: [..., (importerModule) => {
     // When the module having the identifier `UnknownBankModule` imports the `BankModule`
     // it'll not be able to also import the `SecureBankBranchModule` as we are not returning it here.
@@ -494,13 +490,13 @@ class ApiService {
   private async sendToLocation(user: User, location: any): Promise<any> {}
 }
 
-const ApiModule = new ProviderModule({
-  identifier: Symbol('ApiModule'),
+const ApiModuleDefinition = new ProviderModuleDefinition({
+  identifier: 'ApiModule',
   providers: [UserService, ApiService],
 });
 
-const ApiModuleMocked = new ProviderModule({
-  identifier: Symbol('ApiModule_MOCK'),
+const ApiModuleDefinitionMocked = ApiModule.clone({
+  identifier: 'ApiModuleMocked',
   providers: [
     {
       provide: UserService,
@@ -518,13 +514,41 @@ const ApiModuleMocked = new ProviderModule({
 });
 ```
 
-Now what you have to do is just to provide the `ApiModuleMocked` instead of the `ApiModule` 😎
+Now what you have to do is just to provide the `ApiModuleDefinitionMocked` instead of the `ApiModuleDefinition` 😎
 
 ## Documentation
 
 Comprehensive, auto-generated documentation is available at:
 
 👉 [https://adimarianmutu.github.io/x-injection/index.html](https://adimarianmutu.github.io/x-injection/index.html)
+
+## Conventions
+
+To create a stable experience across different projects, the following _conventions_ should be followed.
+
+### ProviderModule
+
+When instantiating a new `ProviderModule` class you should append `Module` to the `variable` name and its `identifier`:
+
+```ts
+const DatabaseModule = new ProviderModule({
+  identifier: 'DatabaseModule',
+});
+```
+
+### ProviderModuleDefinition
+
+When instantiating a new `ProviderModuleDefinition` class you should append `ModuleDef` to the `variable` name:
+
+> [!NOTE]
+>
+> _Do not append `Def` to the `identifier` as that will be inherit by the actual `ProviderModule`!_
+
+```ts
+const DatabaseModuleDef = new ProviderModuleDefinition({
+  identifier: 'DatabaseModule', // No `Def` here!
+});
+```
 
 ## ReactJS Implementation
 
@@ -540,4 +564,6 @@ Please ensure your contributions adhere to the project's code style. See the rep
 
 ---
 
-> For questions, feature requests, or bug reports, feel free to open an [issue](https://github.com/AdiMarianMutu/x-injection/issues) on GitHub!
+> [!NOTE]
+>
+> **For questions, feature requests, or bug reports, feel free to open an [issue](https://github.com/AdiMarianMutu/x-injection/issues) on GitHub.**

@@ -90,7 +90,8 @@ export class ProviderModule implements IProviderModule {
   readonly identifier: ModuleIdentifier;
   isMarkedAsGlobal: boolean = false;
 
-  protected isAppModule: boolean;
+  protected isAppModule: IProviderModuleNaked['isAppModule'];
+  protected instantiatedFromDefinition: IProviderModuleNaked['instantiatedFromDefinition'];
   protected container!: Container;
   protected defaultScope!: IProviderModuleNaked['defaultScope'];
   protected onReady: IProviderModuleNaked['onReady'];
@@ -107,6 +108,7 @@ export class ProviderModule implements IProviderModule {
     this.identifier = this.setIdentifier(opts.identifier);
     this.isDisposed = internalOptions.isDisposed ?? false;
     this.isAppModule = internalOptions.isAppModule ?? false;
+    this.instantiatedFromDefinition = internalOptions.instantiatedFromDefinition ?? false;
 
     // If this module is the `AppModule`,
     // the initialization will be done when the `IProviderModuleNaked._internalInit` method is invoked.
@@ -198,7 +200,12 @@ export class ProviderModule implements IProviderModule {
 
       const importedModule = (
         ProviderModuleHelpers.isModuleDefinition(importedModuleOrDefinition)
-          ? new ProviderModule(importedModuleOrDefinition.getDefinition())
+          ? new ProviderModule(
+              ProviderModuleHelpers.buildInternalConstructorParams({
+                ...importedModuleOrDefinition.getDefinition(),
+                instantiatedFromDefinition: true,
+              })
+            )
           : importedModuleOrDefinition
       ) as ProviderModule;
 

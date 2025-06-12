@@ -64,6 +64,7 @@ export interface ProviderModuleOptions {
 
 export interface ProviderModuleOptionsInternal {
   isAppModule?: boolean;
+  instantiatedFromDefinition?: boolean;
   isDisposed?: boolean;
 
   /** Can be used to manually provide the {@link IAppModule} instance. */

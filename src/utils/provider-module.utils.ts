@@ -67,7 +67,9 @@ export class ProviderModuleUtils {
   }
 
   private checkIfShouldBeAddedToTheGlobalRegister(): void {
-    if (this.moduleNaked.isAppModule || !this.module.isMarkedAsGlobal) return;
+    if (this.moduleNaked.isAppModule || !this.module.isMarkedAsGlobal || this.moduleNaked.instantiatedFromDefinition) {
+      return;
+    }
 
     GlobalModuleRegister.add(this.module);
   }

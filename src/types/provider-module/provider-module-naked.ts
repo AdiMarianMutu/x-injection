@@ -15,8 +15,11 @@ import type { DependencyProvider, ProviderToken } from '../provider-token';
 
 /** Can be used to publicly expose internal properties and methods of an {@link IProviderModule} instance. */
 export interface IProviderModuleNaked extends IProviderModule {
-  /** It'll be true when the current module is the global `AppModule`. */
+  /** It'll be `true` when the current module is the global `AppModule`. */
   readonly isAppModule: boolean;
+
+  /** It'll be `true` when the `module` has been instantiated from a `ProviderModuleDefinition` instance. */
+  readonly instantiatedFromDefinition: boolean;
 
   /** The low-level `InversifyJS` {@link https://inversify.io/docs/api/container/ | container} instance. */
   readonly container: Container;

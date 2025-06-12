@@ -1,10 +1,10 @@
-import type { IProviderModule } from '../types';
+import type { ProviderModuleOrDefinition } from '../types';
 
 /** Exception which indicates that there is a generic error with an instance of {@link IProviderModule}. */
 export class InjectionProviderModuleError extends Error {
   override name = InjectionProviderModuleError.name;
 
-  constructor(module: IProviderModule, message: string) {
+  constructor(module: ProviderModuleOrDefinition, message: string) {
     super(`{ProviderModule.${module.toString()}} => ${message}`);
   }
 }

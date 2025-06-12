@@ -1,5 +1,6 @@
 import { InjectionScope } from '../enums';
 import type { IProviderModuleDefinition, ProviderModuleOptions } from '../types';
+import { GlobalModuleRegister } from './global-modules-register';
 
 /**
  * Can be used when you _don't_ want to initialize a `ProviderModule` eagerly as each `ProviderModule` has its own _(InversifyJS)_ container
@@ -49,6 +50,8 @@ export class ProviderModuleDefinition implements IProviderModuleDefinition {
     this.markAsGlobal = markAsGlobal ?? false;
     this.onReady = onReady;
     this.onDispose = onDispose;
+
+    this.checkIfShouldBeAddedToTheGlobalRegister();
   }
 
   getDefinition(): ProviderModuleOptions {
@@ -67,5 +70,11 @@ export class ProviderModuleDefinition implements IProviderModuleDefinition {
   toString(): string {
     /* istanbul ignore next */
     return (typeof this.identifier === 'symbol' ? this.identifier.description : this.identifier) ?? 'Unknown';
+  }
+
+  private checkIfShouldBeAddedToTheGlobalRegister(): void {
+    if (!this.markAsGlobal) return;
+
+    GlobalModuleRegister.add(this);
   }
 }

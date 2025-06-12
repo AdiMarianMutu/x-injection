@@ -1,4 +1,4 @@
-import type { IProviderModule } from '../types';
+import type { ProviderModuleOrDefinition } from '../types';
 
 /**
  * Each module which uses the `markAsGlobal` marker will
@@ -9,4 +9,4 @@ import type { IProviderModule } from '../types';
  *
  * _Should be empty if all global modules are correctly registered._
  */
-export const GlobalModuleRegister = new Set<IProviderModule>();
+export const GlobalModuleRegister = new Set<ProviderModuleOrDefinition>();

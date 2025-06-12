@@ -131,7 +131,7 @@ const SECRET_TOKEN_PROVIDER = { provide: 'SECRET_TOKEN', useValue: '123' };
 const SECRET_TOKEN_2_PROVIDER = { provide: 'SECRET_TOKEN_2', useValue: 123 };
 
 const ConfigModule = new ProviderModule({
-  identifier: Symbol('ConfigModule'),
+  identifier: 'ConfigModule',
   markAsGlobal: true,
   providers: [SECRET_TOKEN_PROVIDER, SECRET_TOKEN_2_PROVIDER],
   exports: [SECRET_TOKEN_PROVIDER, SECRET_TOKEN_2_PROVIDER],
@@ -167,7 +167,7 @@ The below list shows them in order of priority _(highest to lowest)_, meaning th
 3. By providing the [defaultScope](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#defaultscope) property when initializing a `ProviderModule`:
    ```ts
    const RainModule = new ProviderModule({
-     identifier: Symbol('RainModule'),
+     identifier: 'RainModule',
      defaultScope: InjectionScope.Transient,
    });
    ```
@@ -252,8 +252,7 @@ export class SessionService {
 }
 
 export const DatabaseModule = new ProviderModule({
-  identifier: Symbol('DatabaseModule'),
-  // or:  identifier: 'DatabaseModule',
+  identifier: 'DatabaseModule',
   providers: [DatabaseService],
   exports: [DatabaseService],
   onReady: async (module) => {
@@ -280,7 +279,7 @@ export const DatabaseModule = new ProviderModule({
 });
 
 export const SessionModule = new ProviderModule({
-  identifier: Symbol('SessionModule'),
+  identifier: 'SessionModule',
   defaultScope: InjectionScope.Request,
   providers: [SessionService],
   exports: [SessionService],

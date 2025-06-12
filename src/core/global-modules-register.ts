@@ -1,7 +1,7 @@
 import type { ProviderModuleOrDefinition } from '../types';
 
 /**
- * Each module which uses the `markAsGlobal` marker will
+ * Each module which uses the `isGlobal` marker will
  * register itself into this register.
  *
  * Will then be used by the `AppModule` to make sure that the imported modules

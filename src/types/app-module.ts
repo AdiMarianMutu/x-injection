@@ -22,7 +22,7 @@ export interface AppModuleOptions
    *
    * **Note:** _Do not open an `issue` if a bug or edge-case is caused by having the `strict` property disabled!_
    *
-   * - `markAsGlobal`: Will not be enforced anymore.
+   * - `isGlobal`: Will not be enforced anymore.
    *
    * Defaults to `true`.
    */

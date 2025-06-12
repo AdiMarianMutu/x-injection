@@ -6,9 +6,10 @@ import {
   InjectionProviderModuleError,
   InjectionProviderModuleGlobalMarkError,
   ProviderModule,
+  ProviderModuleHelpers,
 } from '../src';
-import { GlobalModuleRegister } from '../src/core';
-import { GlobalService, TestAppModule } from './setup';
+import { GlobalModuleRegister, ProviderModuleDefinition } from '../src/core';
+import { EmptyService, GlobalService, TestAppModule } from './setup';
 
 describe('AppModule', () => {
   afterEach(() => jest.clearAllMocks());
@@ -92,6 +93,40 @@ describe('AppModule', () => {
           imports: [mm],
         });
       }).toThrow(InjectionProviderModuleGlobalMarkError);
+    });
+
+    it('should be able to `lazyImport` a `ProviderModule`', () => {
+      const am = new GlobalAppModule().register<true>({ container: () => new Container() });
+      const md = new ProviderModule(
+        ProviderModuleHelpers.buildInternalConstructorParams({
+          appModule: () => am as any,
+          identifier: 'm',
+          markAsGlobal: true,
+          providers: [EmptyService],
+          exports: [EmptyService],
+        })
+      );
+
+      am.lazyImport(md);
+
+      expect(am.get(EmptyService)).toBeInstanceOf(EmptyService);
+    });
+
+    it('should be able to `lazyImport` a `ProviderModuleDefinition`', () => {
+      const am = new GlobalAppModule().register<true>({ container: () => new Container() });
+      const md = new ProviderModuleDefinition(
+        ProviderModuleHelpers.buildInternalConstructorParams({
+          appModule: () => am as any,
+          identifier: 'md',
+          markAsGlobal: true,
+          providers: [EmptyService],
+          exports: [EmptyService],
+        })
+      );
+
+      am.lazyImport(md);
+
+      expect(am.get(EmptyService)).toBeInstanceOf(EmptyService);
     });
   });
 

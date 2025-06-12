@@ -102,6 +102,10 @@ AppModule.register({});
 >
 > _You must invoke `AppModule.register()` even if you have no global providers. Passing an empty object `{}` to the method is valid._
 
+> [!NOTE]
+>
+> _You can import additional modules (later at run-time) into the `AppModule` by using the [lazyImport](https://adimarianmutu.github.io/x-injection/interfaces/IAppModule.html#lazyimport-1) `method`._
+
 ### Registering Global Providers
 
 To make services available throughout your application, register them as global providers:

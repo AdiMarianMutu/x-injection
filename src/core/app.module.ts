@@ -1,6 +1,12 @@
 import { InjectionError, InjectionProviderModuleGlobalMarkError } from '../errors';
 import { ProviderModuleHelpers } from '../helpers';
-import type { AppModuleOptions, ExportsList, IAppModule, IProviderModuleNaked } from '../types';
+import type {
+  AppModuleOptions,
+  ExportsList,
+  IAppModule,
+  IProviderModuleNaked,
+  ProviderModuleOrDefinition,
+} from '../types';
 import { GLOBAL_APP_MODULE_ID } from './constants';
 import { GlobalModuleRegister } from './global-modules-register';
 import { ProviderModule } from './provider-module';
@@ -43,6 +49,12 @@ export class GlobalAppModule extends ProviderModule implements IAppModule {
     return this as any;
   }
 
+  override lazyImport(...modules: ProviderModuleOrDefinition[]): void {
+    this.checkIfRegisteredModulesHaveGlobalMark(this.nakedModule, modules);
+
+    super.lazyImport(...modules);
+  }
+
   /* istanbul ignore next */
   override toNaked(): IAppModule & IProviderModuleNaked {
     return super.toNaked() as any;
@@ -63,10 +75,13 @@ export class GlobalAppModule extends ProviderModule implements IAppModule {
 
     list.forEach((m) => {
       const module = ProviderModuleHelpers.tryStaticOrLazyExportToStaticExport(this, m) as IProviderModuleNaked;
+      const isModuleDefinition = ProviderModuleHelpers.isModuleDefinition(module);
 
-      if (!(module instanceof ProviderModule) && !ProviderModuleHelpers.isModuleDefinition(module)) return;
+      if (!(module instanceof ProviderModule) && !isModuleDefinition) return;
 
-      if (module.isMarkedAsGlobal) {
+      const hasMarkedAsGlobal = isModuleDefinition ? module.markAsGlobal : module.isMarkedAsGlobal;
+
+      if (hasMarkedAsGlobal) {
         GlobalModuleRegister.delete(module);
 
         // This module may also export other modules

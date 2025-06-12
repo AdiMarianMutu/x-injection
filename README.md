@@ -190,9 +190,9 @@ AppModule.lazyImport(FancyModuleDefinition);
 
 > [!NOTE]
 >
-> _All modules which are imported into the `AppModule` must have the [isGlobal](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#isGlobal) option set to `true`, otherwise the [InjectionProviderModuleGlobalMarkError](https://adimarianmutu.github.io/x-injection/classes/InjectionProviderModuleGlobalMarkError.html) exception will be thrown!_
+> _All modules which are imported into the `AppModule` must have the [isGlobal](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#isglobal) option set to `true`, otherwise the [InjectionProviderModuleGlobalMarkError](https://adimarianmutu.github.io/x-injection/classes/InjectionProviderModuleGlobalMarkError.html) exception will be thrown!_
 >
-> _An [InjectionProviderModuleGlobalMarkError](https://adimarianmutu.github.io/x-injection/classes/InjectionProviderModuleGlobalMarkError.html) exception will be thrown also when importing into the `AppModule` a module which does **not** have the [isGlobal](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#isGlobal) flag option!_
+> _An [InjectionProviderModuleGlobalMarkError](https://adimarianmutu.github.io/x-injection/classes/InjectionProviderModuleGlobalMarkError.html) exception will be thrown also when importing into the `AppModule` a module which does **not** have the [isGlobal](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#isglobal) flag option!_
 
 ### Injection Scope
 
@@ -477,7 +477,7 @@ When invoking the [AppModule.register](https://adimarianmutu.github.io/x-injecti
 
 ##### isGlobal
 
-When using the [isGlobal](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#isGlobal) property if a `module` is imported into the `AppModule` without having the `isGlobal` flag property set, it'll throw an error.
+When using the [isGlobal](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#isglobal) property if a `module` is imported into the `AppModule` without having the `isGlobal` flag property set, it'll throw an error.
 
 This may look redundant, but it may save you _(and your team)_ some hours of debugging in understanding why some `providers` are able to make their way into other `modules`. As those `providers` are now acting as _global_ `providers`.
 

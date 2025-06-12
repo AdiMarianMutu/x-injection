@@ -409,7 +409,7 @@ For advanced scenarios, `IProviderModuleNaked` exposes additional methods (prefi
 
 By default the `AppModule` runs in "strict mode", a built-in mode which enforces an _opinionated_ set of rules aiming to reduce common pitfalls and edge-case bugs.
 
-When invoking the [AppModule.register](https://adimarianmutu.github.io/x-injection/interfaces/IAppModule.html#register-1) `method` you can set the [\_\_strict](https://adimarianmutu.github.io/x-injection/interfaces/AppModuleOptions.html#_strict) property to `false` in order to permanentely disable those set of built-in rules.
+When invoking the [AppModule.register](https://adimarianmutu.github.io/x-injection/interfaces/IAppModule.html#register-1) `method` you can set the [\_strict](https://adimarianmutu.github.io/x-injection/interfaces/AppModuleOptions.html#_strict) property to `false` in order to permanentely disable those set of built-in rules.
 
 > **Note:** _Do not open an `issue` if a bug or edge-case is caused by having the `strict` property disabled!_
 

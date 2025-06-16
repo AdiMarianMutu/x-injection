@@ -7,6 +7,8 @@ export { AppModule, ProviderModule, ProviderModuleBlueprint } from './core';
 
 export type {
   IProviderModule,
+  ProviderModuleOptions,
+  ProviderModuleOptionsInternal,
   ProviderModuleGetReturn,
   ProviderModuleGetManyParam,
   ProviderModuleGetManyReturn,

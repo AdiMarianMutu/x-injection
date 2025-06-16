@@ -48,7 +48,7 @@ jobs:
       - name: Setup Node.js for npmjs
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.version }}
+          node-version: 22
           registry-url: 'https://registry.npmjs.org'
           scope: '@adimm'
           always-auth: 'true'

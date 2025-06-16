@@ -4,7 +4,7 @@ import {
   ProviderModule,
   ProviderValueToken,
 } from '../src';
-import { EmptyService, EmptyService2, EmptyService3 } from './setup';
+import { EmptyService, EmptyService2, EmptyService3, FilledService } from './setup';
 import { LazyModuleService } from './setup/lazy.module';
 import { LAZY_PROVIDER } from './setup/lazy.provider';
 
@@ -201,8 +201,9 @@ describe('Dynamic Definition', () => {
   });
 
   describe('Events', () => {
+    const cb = jest.fn();
+
     it('should correctly emit and intercept the signal', () => {
-      const cb = jest.fn();
       const m00 = ProviderModule.create({ id: 'm00' });
 
       m00.update.subscribe(cb);
@@ -211,6 +212,21 @@ describe('Dynamic Definition', () => {
 
       expect(cb).toHaveBeenCalledTimes(1);
       expect(cb).toHaveBeenCalledWith({ type: DefinitionEventType.Provider, change: EmptyService });
+    });
+
+    it('should correctly intercept a `get` event', () => {
+      const m1 = ProviderModule.create({ id: 'm1', providers: [FilledService, EmptyService] });
+
+      m1.update.subscribe(({ type, change }) => {
+        if (type !== DefinitionEventType.GetProvider) return;
+
+        cb(change);
+      });
+
+      const result = m1.get(FilledService);
+
+      expect(cb).toHaveBeenCalledTimes(1);
+      expect(cb).toHaveBeenCalledWith(result);
     });
   });
 });

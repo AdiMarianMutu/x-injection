@@ -141,42 +141,5 @@ describe('ProviderToken', () => {
         expect(() => m0.get(EmptyService)).toThrow(InjectionProviderModuleMissingProviderError);
       });
     });
-
-    describe('On Event', () => {
-      const cb = jest.fn();
-
-      it('should invoke the `onGet` callback event', () => {
-        m0.update.addProvider({
-          provide: EmptyService,
-          useClass: EmptyService,
-          event: {
-            onGet: cb,
-          },
-        });
-
-        m0.get('OPTIONAL', true);
-        m0.get(EmptyService);
-
-        expect(cb).toHaveBeenCalledTimes(1);
-      });
-
-      it('should invoke the `onRemove` callback event', () => {
-        const PROVIDER: ProviderClassToken<EmptyService> = {
-          provide: EmptyService,
-          useClass: EmptyService,
-          event: {
-            onRemove: cb,
-          },
-        };
-
-        m0.update.addProvider(PROVIDER);
-        m0.update.addProvider(EmptyService2);
-
-        m0.update.removeProvider(PROVIDER);
-        m0.update.removeProvider(EmptyService2);
-
-        expect(cb).toHaveBeenCalledTimes(1);
-      });
-    });
   });
 });

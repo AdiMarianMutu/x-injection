@@ -17,6 +17,13 @@ export enum DefinitionEventType {
   Provider,
 
   /**
+   * A `module` is retrieving from its container a `provider`.
+   *
+   * **Note:** _The occurred change type is: `any`_
+   */
+  GetProvider,
+
+  /**
    * A new `module` or `provider`  has been added to the `exports` definition.
    *
    * **Note:** _The occurred change type is: `ExportDefinition`_

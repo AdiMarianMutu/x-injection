@@ -1,7 +1,6 @@
 import type { BindingConstraints } from 'inversify';
 import type { Class } from 'type-fest';
 
-import type { IProviderModule } from '../core';
 import type { InjectionScope } from '../enums';
 
 export type ProviderToken<T = any> = ProviderIdentifier<T> | DependencyProvider<T>;
@@ -73,23 +72,6 @@ export type ProviderIdentifier<T = any> = Class<T> | Function | symbol | string;
 export interface ProviderOptions<T> {
   /** The injection `token`.  */
   provide: ProviderIdentifier<T>;
-
-  /** Can be used to bind a `callback` to a specific internal `event`. */
-  event?: {
-    /**
-     * It'll be invoked when the {@link IProviderModule | Module} `get` method is used to retrieve this {@link ProviderToken}.
-     *
-     * @param module The {@link IProviderModule | Module} from where is being retrieved.
-     */
-    onGet?: (module: IProviderModule) => void;
-
-    /**
-     * It'll be invoked when the {@link IProviderModule | Module} is removing this {@link ProviderToken} from its container.
-     *
-     * @param module The {@link IProviderModule | Module} from where is being removed.
-     */
-    onRemove?: (module: IProviderModule) => void;
-  };
 
   /**
    * Specifies whether the binding is used to provide a resolved value for the given {@link ProviderToken | provider}.

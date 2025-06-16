@@ -1,3 +1,4 @@
+import { DefinitionEventType } from '../../enums';
 import {
   InjectionError,
   InjectionProviderModuleDisposedError,
@@ -56,8 +57,6 @@ export class ProviderModule implements IProviderModule {
    *
    * Static property needed in order to avoid introducing a _cirular dependency_ between
    * the `AppModule` instance and the `ProviderModule` class.
-   *
-   * **Internally used, do not use!**
    */
   static readonly APP_MODULE_REF: IProviderModule;
 
@@ -137,7 +136,14 @@ export class ProviderModule implements IProviderModule {
   ): ProviderModuleGetReturn<T, IsOptional, AsList> {
     this.throwIfDisposed();
 
-    return this.moduleContainer.get<T, IsOptional, AsList>(provider, isOptional, asList);
+    const value = this.moduleContainer.get<T, IsOptional, AsList>(provider, isOptional, asList);
+
+    this.dynamicModuleDef.emitEventSafely({
+      type: DefinitionEventType.GetProvider,
+      change: value,
+    });
+
+    return value;
   }
 
   getMany<D extends (ProviderModuleGetManyParam<any> | ProviderToken)[]>(

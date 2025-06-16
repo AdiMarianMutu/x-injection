@@ -128,26 +128,6 @@ export class ModuleContainer {
     if (opts.when) {
       binding.when(opts.when) as any;
     }
-
-    if (opts.event?.onGet) {
-      this.providerModule.middlewaresManager.add(MiddlewareType.BeforeGet, (p: any, ptk: any) => {
-        if (!ProviderTokenHelpers.providerTokensAreEqual(provider, ptk)) return p;
-
-        opts.event?.onGet?.(this.providerModule as any);
-
-        return p;
-      });
-    }
-
-    if (opts.event?.onRemove) {
-      this.providerModule.middlewaresManager.add(MiddlewareType.BeforeRemoveProvider, (ptk: any) => {
-        if (!ProviderTokenHelpers.providerTokensAreEqual(provider, ptk)) return true;
-
-        opts.event?.onRemove?.(this.providerModule as any);
-
-        return true;
-      });
-    }
   }
 
   setBindingScope<T>(provider: ProviderToken<T>, binding: BindInWhenOnFluentSyntax<T>): BindWhenOnFluentSyntax<T> {

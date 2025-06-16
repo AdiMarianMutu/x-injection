@@ -217,6 +217,20 @@ export class DynamicModuleDefinition implements IDynamicModuleDefinition {
     return true;
   }
 
+  emitEventSafely(event: DefinitionEvent): void {
+    if (this.emittingModules.has(this.providerModule)) {
+      // Already emitting for this module, skip to prevent cycle
+      return;
+    }
+
+    try {
+      this.emittingModules.add(this.providerModule);
+      this.event$.emit(event);
+    } finally {
+      this.emittingModules.delete(this.providerModule);
+    }
+  }
+
   dispose(): void {
     //@ts-expect-error Null not assignable.
     this.importedModuleSubscriptions = null;
@@ -290,20 +304,6 @@ export class DynamicModuleDefinition implements IDynamicModuleDefinition {
     });
 
     this.importedModuleSubscriptions.set(importedModule, subscription);
-  }
-
-  private emitEventSafely(event: DefinitionEvent): void {
-    if (this.emittingModules.has(this.providerModule)) {
-      // Already emitting for this module, skip to prevent cycle
-      return;
-    }
-
-    try {
-      this.emittingModules.add(this.providerModule);
-      this.event$.emit(event);
-    } finally {
-      this.emittingModules.delete(this.providerModule);
-    }
   }
 
   private unsubscribeFromImportedModuleEvents(importedModule: ProviderModule): void {

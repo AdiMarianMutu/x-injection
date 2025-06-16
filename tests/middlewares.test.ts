@@ -107,7 +107,9 @@ describe('Middlewares', () => {
       m0.middlewares.add(MiddlewareType.BeforeGet, (provider) => {
         return provider;
       });
-      m0.middlewares.add(MiddlewareType.BeforeGet, (provider) => {
+      m0.middlewares.add(MiddlewareType.BeforeGet, (provider, providerToken, inject) => {
+        expect(inject(EmptyService)).toBeInstanceOf(EmptyService);
+
         return provider instanceof EmptyService ? new EmptyService2() : provider;
       });
       m0.middlewares.add(MiddlewareType.BeforeGet, (provider) => {

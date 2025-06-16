@@ -48,7 +48,9 @@ export class MiddlewaresManager implements IMiddlewaresManager {
         return chainedArg;
 
       case MiddlewareType.BeforeGet:
-        return !middlewares ? args[0] : middlewares.reduce((arg, middleware) => middleware(arg, args[1]), args[0]);
+        return !middlewares
+          ? args[0]
+          : middlewares.reduce((arg, middleware) => middleware(arg, args[1], args[2]), args[0]);
 
       case MiddlewareType.BeforeRemoveImport:
       case MiddlewareType.BeforeRemoveProvider:

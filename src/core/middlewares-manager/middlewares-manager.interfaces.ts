@@ -1,5 +1,6 @@
 import type { MiddlewareType } from '../../enums';
 import type { DependencyProvider, ExportDefinition, ProviderToken } from '../../types';
+import type { ModuleContainer } from '../container';
 import type { IProviderModule } from '../provider-module';
 
 export interface IMiddlewaresManager {
@@ -12,7 +13,7 @@ export type AddMiddlewareCallbackType<T extends MiddlewareType> = T extends Midd
   : T extends MiddlewareType.BeforeAddProvider
     ? (provider: ProviderToken) => ProviderToken | boolean
     : T extends MiddlewareType.BeforeGet
-      ? (provider: any, providerToken: ProviderToken) => any
+      ? (provider: any, providerToken: ProviderToken, inject: ModuleContainer['getProvider']) => any
       : T extends MiddlewareType.BeforeRemoveImport
         ? (module: IProviderModule) => boolean
         : T extends MiddlewareType.BeforeRemoveProvider

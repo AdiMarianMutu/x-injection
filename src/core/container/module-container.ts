@@ -47,7 +47,8 @@ export class ModuleContainer {
     const middlewareResult = this.providerModule.middlewaresManager.applyMiddlewares<any>(
       MiddlewareType.BeforeGet,
       this.getProvider(provider, asList),
-      provider
+      provider,
+      this.getProvider.bind(this)
     );
     if (middlewareResult || middlewareResult === null) return middlewareResult;
 
@@ -153,7 +154,7 @@ export class ModuleContainer {
     this.container = null;
   }
 
-  private getProvider<T>(provider: ProviderToken<T>, asList: boolean | undefined): T | T[] | void {
+  private getProvider<T>(provider: ProviderToken<T>, asList?: boolean): T | T[] | void {
     const providerIdentifier = ProviderTokenHelpers.toProviderIdentifier(provider);
 
     if (asList) {

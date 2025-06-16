@@ -1,22 +1,17 @@
-export * from './core/constants';
 export * from './decorators';
 export * from './errors';
 export * from './enums';
 export * from './helpers';
 
-export { GlobalContainer, AppModule, GlobalAppModule, ProviderModule, ProviderModuleDefinition } from './core';
+export { AppModule, ProviderModule, ProviderModuleBlueprint } from './core';
 
 export type {
-  IAppModule,
-  AppModuleOptions,
-  ProviderModuleOptions,
-  ProviderModuleOptionsInternal,
   IProviderModule,
-  IProviderModuleDefinition,
-  IProviderModuleNaked,
-  ExportsList,
-  ProviderModuleGetManySignature,
+  ProviderModuleGetReturn,
   ProviderModuleGetManyParam,
+  ProviderModuleGetManyReturn,
+} from './core';
+export type {
   DependencyProvider,
   ProviderToken,
   ProviderClassToken,
@@ -25,7 +20,7 @@ export type {
   ProviderIdentifier,
   ProviderOptions,
   ProviderScopeOption,
-  ProviderModuleOrDefinition,
-  InternalInitOptions,
-  OnEvent,
+  ExportDefinition,
+  ExportsDefinition,
+  ExportsDefinitionOptimized,
 } from './types';

@@ -5,5 +5,5 @@ import type { ProviderToken } from '../types';
 
 /** See {@link https://inversify.io/docs/api/decorator/#multiinject} for more details. */
 export function MultiInject(provider: ProviderToken) {
-  return _multiInject(ProviderTokenHelpers.toServiceIdentifier(provider));
+  return _multiInject(ProviderTokenHelpers.toProviderIdentifier(provider));
 }

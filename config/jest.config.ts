@@ -3,6 +3,7 @@ import type { Config } from 'jest';
 const config: Config = {
   rootDir: '../',
   moduleFileExtensions: ['ts', 'json', 'js'],
+  setupFilesAfterEnv: ['./tests/setup/modules.ts'],
   setupFiles: ['./tests/setup/mocks.ts'],
   testTimeout: 5000,
   verbose: true,

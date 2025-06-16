@@ -1,1 +1,1 @@
-export * from './provider-module.utils';
+export * from './signal';

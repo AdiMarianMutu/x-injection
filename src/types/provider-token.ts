@@ -1,8 +1,8 @@
 import type { BindingConstraints } from 'inversify';
 import type { Class } from 'type-fest';
 
-import type { InjectionScope } from '../../enums';
-import type { OnEvent } from './on-event';
+import type { IProviderModule } from '../core';
+import type { InjectionScope } from '../enums';
 
 export type ProviderToken<T = any> = ProviderIdentifier<T> | DependencyProvider<T>;
 
@@ -46,9 +46,26 @@ export type ProviderFactoryToken<T> = (ProviderOptions<T> & ProviderScopeOption)
   /**
    * Optional list of providers to be injected into the context of the Factory `function`.
    *
-   * See {@link https://inversify.io/docs/api/binding-syntax/#toresolvedvalue} for more details.
+   * **Note:** _The current module container context is available too._
+   *
+   * ```ts
+   * ProviderModule.create({
+   *   id: 'FactoryProviderModule',
+   *   providers: [
+   *     DatabaseService,
+   *     {
+   *       provide: 'DATABASE_SECRET',
+   *       useFactory: (dbService: DatabaseService) => {
+   *         // Here you have access to the already resolved `DatabaseService` of the `FactoryProviderModule`.
+   *         return dbService.getSecret();
+   *       },
+   *       inject: [DatabaseService]
+   *     }
+   *   ]
+   * });
+   * ```
    */
-  inject?: ProviderToken[];
+  inject?: ProviderIdentifier[];
 };
 
 export type ProviderIdentifier<T = any> = Class<T> | Function | symbol | string;
@@ -57,13 +74,22 @@ export interface ProviderOptions<T> {
   /** The injection `token`.  */
   provide: ProviderIdentifier<T>;
 
-  /**
-   * Can be used to set a binding handler.
-   *
-   * See {@link https://inversify.io/docs/fundamentals/lifecycle/activation/ | Activation}
-   * and {@link https://inversify.io/docs/fundamentals/lifecycle/deactivation/ | Deactivation} lifecycle.
-   */
-  onEvent?: OnEvent<T>;
+  /** Can be used to bind a `callback` to a specific internal `event`. */
+  event?: {
+    /**
+     * It'll be invoked when the {@link IProviderModule | Module} `get` method is used to retrieve this {@link ProviderToken}.
+     *
+     * @param module The {@link IProviderModule | Module} from where is being retrieved.
+     */
+    onGet?: (module: IProviderModule) => void;
+
+    /**
+     * It'll be invoked when the {@link IProviderModule | Module} is removing this {@link ProviderToken} from its container.
+     *
+     * @param module The {@link IProviderModule | Module} from where is being removed.
+     */
+    onRemove?: (module: IProviderModule) => void;
+  };
 
   /**
    * Specifies whether the binding is used to provide a resolved value for the given {@link ProviderToken | provider}.

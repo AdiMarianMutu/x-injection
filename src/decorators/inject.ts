@@ -5,5 +5,5 @@ import type { ProviderToken } from '../types';
 
 /** See {@link https://inversify.io/docs/api/decorator/#inject} for more details. */
 export function Inject(provider: ProviderToken) {
-  return _inject(ProviderTokenHelpers.toServiceIdentifier(provider));
+  return _inject(ProviderTokenHelpers.toProviderIdentifier(provider));
 }

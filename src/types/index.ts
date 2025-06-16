@@ -1,3 +1,4 @@
-export type * from './provider-module';
+export type * from './generics';
+
 export type * from './provider-token';
-export type * from './app-module';
+export type * from './module-definition';

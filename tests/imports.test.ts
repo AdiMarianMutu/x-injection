@@ -1,177 +1,116 @@
-import { Injectable, InjectionScope, ProviderModule, ProviderModuleDefinition } from '../src';
-import { EmptyService, EmptyService2, EmptyService3, TestAppModule } from './setup';
+import { InjectionProviderModuleMissingProviderError, ProviderModule } from '../src';
+import { EmptyService, EmptyService2 } from './setup';
+import { EmptyModule } from './setup/modules';
 
 describe('Imports', () => {
   afterEach(() => jest.clearAllMocks());
 
-  it('should fail to get a dependency from an imported module with no exports', () => {
-    const m = new ProviderModule({
-      identifier: 'm',
-      providers: [EmptyService],
-    });
-
-    const mm = new ProviderModule({
-      identifier: 'mm',
-      imports: [m],
-    });
-
-    expect(() => mm.get(EmptyService)).toThrow();
-  });
-
-  it('should succeed to get a dependency from an imported module with exports', () => {
-    const m = new ProviderModule({
-      identifier: 'm',
+  it('should not import a global module into a scoped module', () => {
+    const m0 = new ProviderModule({
+      appModuleRef: ProviderModule.create({ id: 'am0' }),
+      id: 'm0',
+      isGlobal: true,
       providers: [EmptyService],
       exports: [EmptyService],
     });
 
-    const mm = new ProviderModule({
-      identifier: 'mm',
-      imports: [m],
+    const m1 = ProviderModule.create({
+      id: 'm1',
+      imports: [m0],
     });
 
-    expect(() => mm.get(EmptyService)).not.toThrow();
+    expect(m1.isImportingModule(m0)).toBe(false);
   });
 
-  it('should successfully import multiple nested modules', () => {
-    const TRANSIENT_EMPTY_SERVICE = {
-      provide: EmptyService,
-      useClass: EmptyService,
-      scope: InjectionScope.Transient,
-    };
+  describe('Nested', () => {
+    it('should `get` from the inner most imported module', () => {
+      const m0 = new ProviderModule({
+        id: 'm0',
+        providers: [EmptyService],
+        exports: [EmptyModule, EmptyService],
+      });
 
-    const m = new ProviderModule({
-      identifier: 'm',
-      providers: [TRANSIENT_EMPTY_SERVICE],
-      exports: [TRANSIENT_EMPTY_SERVICE],
+      const m1 = new ProviderModule({
+        id: 'm1',
+        imports: [m0],
+        providers: [EmptyService2],
+        exports: [EmptyModule, EmptyService2, m0],
+      });
+
+      const m2 = new ProviderModule({
+        id: 'm2',
+        imports: [m1],
+        exports: [EmptyModule, m1],
+      });
+
+      const m3 = new ProviderModule({
+        id: 'm3',
+        imports: [EmptyModule, m2],
+      });
+
+      expect(m3.moduleContainer.get(EmptyService)).toBeInstanceOf(EmptyService);
     });
 
-    const mm = new ProviderModule({
-      identifier: 'mm',
-      imports: [m],
-      exports: [m],
+    it('should fail to export a module which has not been first imported', () => {
+      const m0 = new ProviderModule({
+        id: 'm0',
+        providers: [EmptyService],
+        exports: [EmptyService],
+      });
+
+      const m1 = new ProviderModule({
+        id: 'm1',
+        // Missing import of the `m0` here.
+        // imports: [m0],
+        exports: [m0],
+      });
+
+      const m2 = new ProviderModule({
+        id: 'm2',
+        imports: [m1],
+      });
+
+      expect(() => m2.get(EmptyService)).toThrow(InjectionProviderModuleMissingProviderError);
     });
 
-    const mmm = new ProviderModule({
-      identifier: 'mmm',
-      imports: [mm],
-    });
+    it('should fail to `get` from the inner most imported module if not exported during the importing chain', () => {
+      const m0 = new ProviderModule({
+        id: 'm0',
+        providers: [EmptyService],
+        exports: [EmptyService],
+      });
 
-    expect(mmm.get(EmptyService)).toBeInstanceOf(EmptyService);
-    expect(mmm.get(EmptyService)).not.toBe(mm.get(EmptyService));
-    expect(mm.get(EmptyService)).not.toBe(m.get(EmptyService));
+      const m1 = new ProviderModule({
+        id: 'm1',
+        imports: [m0],
+        providers: [EmptyService2],
+        exports: [EmptyService2, m0],
+      });
+
+      const m2 = new ProviderModule({
+        id: 'm2',
+        imports: [m1],
+        // Missing re-export of the `m1` module here
+      });
+
+      const m3 = new ProviderModule({
+        id: 'm3',
+        imports: [m2],
+      });
+
+      expect(() => m3.get(EmptyService)).toThrow(InjectionProviderModuleMissingProviderError);
+    });
   });
 
-  it('should automatically import into the `AppModule` a module marked as global when imported into a `scoped` module', () => {
-    @Injectable()
-    class ForwardedService {}
+  describe('Circular Dependencies', () => {
+    it('should handle circular module imports gracefully', () => {
+      const m0 = ProviderModule.create({ id: 'm0', providers: [EmptyService], exports: [EmptyService] });
+      const m1 = ProviderModule.create({ id: 'm1', imports: [m0] });
 
-    @Injectable()
-    class ForwardedService2 {}
+      // Introduce circular import
+      m0.update.addImport(m1);
 
-    const md = new ProviderModuleDefinition({
-      identifier: 'md',
-      isGlobal: true,
-      providers: [ForwardedService],
-      exports: [ForwardedService],
-    });
-
-    const mmd = new ProviderModuleDefinition({
-      identifier: 'mmd',
-      isGlobal: true,
-      providers: [ForwardedService2],
-      exports: [ForwardedService2],
-    });
-
-    const mm = new ProviderModule({
-      identifier: 'mm',
-      imports: [md, mmd],
-    }).toNaked();
-
-    expect(mm.__isCurrentBound(ForwardedService)).toBe(false);
-    expect(mm.__isCurrentBound(ForwardedService2)).toBe(false);
-
-    expect(TestAppModule.get(ForwardedService)).toBeInstanceOf(ForwardedService);
-    expect(TestAppModule.get(ForwardedService)).toBe(mm.get(ForwardedService));
-    expect(TestAppModule.get(ForwardedService2)).toBeInstanceOf(ForwardedService2);
-    expect(TestAppModule.get(ForwardedService2)).toBe(mm.get(ForwardedService2));
-  });
-
-  describe('Lazy', () => {
-    describe('Imports', () => {
-      it('should succeed', () => {
-        const m = new ProviderModule({
-          identifier: 'm',
-          providers: [EmptyService],
-          exports: [EmptyService],
-        }).toNaked();
-
-        const mm = new ProviderModule({
-          identifier: 'mm',
-          providers: [EmptyService2],
-          exports: [EmptyService2],
-        });
-
-        const mmm = new ProviderModule({
-          identifier: 'mmm',
-          providers: [EmptyService3],
-          exports: [EmptyService3],
-        });
-
-        m.lazyImport(mm, mmm);
-
-        expect(m.__isCurrentBound(EmptyService2)).toBe(true);
-        expect(m.get(EmptyService2)).toBeInstanceOf(EmptyService2);
-
-        expect(m.__isCurrentBound(EmptyService3)).toBe(true);
-        expect(m.get(EmptyService3)).toBeInstanceOf(EmptyService3);
-      });
-    });
-
-    describe('Exports', () => {
-      const lm = new ProviderModule({
-        identifier: 'lm',
-        providers: [EmptyService, EmptyService2],
-        exports: [
-          EmptyService,
-          (importerModule) => {
-            // The `mm` module will not be able to import the `EmptyService2` from this module
-            if (importerModule.toString() === 'mm') return;
-
-            return EmptyService2;
-          },
-        ],
-      });
-
-      it('should import a lazy exported provider/module', () => {
-        const m = new ProviderModule({
-          identifier: 'm',
-          imports: [lm],
-        });
-
-        const mm = new ProviderModule({
-          identifier: 'mm',
-          imports: [lm],
-        });
-
-        expect(m.get(EmptyService2)).toBeInstanceOf(EmptyService2);
-        expect(() => mm.get(EmptyService2)).toThrow();
-      });
-
-      it('should import a nested lazy exported provider/module', () => {
-        const m = new ProviderModule({
-          identifier: 'm',
-          imports: [lm],
-        });
-
-        const mm = new ProviderModule({
-          identifier: 'mm',
-          imports: [m],
-        });
-
-        expect(m.get(EmptyService2)).toBeInstanceOf(EmptyService2);
-        expect(() => mm.get(EmptyService2)).toThrow();
-      });
+      expect(() => m1.get(EmptyService)).not.toThrow();
     });
   });
 });

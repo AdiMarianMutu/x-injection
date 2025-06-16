@@ -1,9 +1,7 @@
 import { getClassMetadata } from '@inversifyjs/core';
-import type { ServiceIdentifier } from 'inversify';
 
 import { InjectionScope } from '../enums';
 import type {
-  DependencyProvider,
   ProviderClassToken,
   ProviderFactoryToken,
   ProviderIdentifier,
@@ -14,7 +12,6 @@ import type {
 } from '../types';
 import { isClass } from './is-class';
 import { isClassOrFunction } from './is-class-or-function';
-import { isFunction } from './is-function';
 import { isPlainObject } from './is-plain-object';
 import { bindingScopeToInjectionScope } from './scope-converter';
 
@@ -35,37 +32,62 @@ export namespace ProviderTokenHelpers {
     return typeof value === 'string' || typeof value === 'symbol' || isClassOrFunction(value);
   }
 
-  export function toServiceIdentifier<T = any>(provider: ProviderToken<T>): ServiceIdentifier<T> {
+  export function toProviderIdentifier<T = any>(provider: ProviderToken<T>): ProviderIdentifier<T> {
     return isProviderIdentifier(provider) ? provider : provider.provide;
   }
 
-  export function toServiceIdentifiers(providers: ProviderToken[]): ServiceIdentifier<unknown>[] {
-    return providers.map((provider) => toServiceIdentifier(provider));
+  export function toProviderIdentifiers(providers: ProviderToken[]): ProviderIdentifier<unknown>[] {
+    return providers.map((provider) => toProviderIdentifier(provider));
   }
 
-  export function toDependencyProviderWithOptions<T extends DependencyProvider<any>>(
-    original: T,
-    // Can be used to override the options
-    override?: Partial<T>
-  ): T {
-    if (isClass(original)) {
-      return {
-        ...(override as any),
-        provide: (override as any)?.provide ?? original,
-        useClass: (override as any)?.useClass ?? original,
-      };
-    } else if (isFunction(original)) {
-      return {
-        ...(override as any),
-        provide: (override as any)?.provide ?? original,
-        useFactory: (override as any)?.useFactory ?? original,
-      };
+  export function providerIdentifierToString(providerIdentifier: ProviderIdentifier): string {
+    if (typeof providerIdentifier === 'symbol' || typeof providerIdentifier === 'string') {
+      return providerIdentifier.toString();
     }
 
-    return {
-      ...original,
-      ...override,
-    };
+    return providerIdentifier.name;
+  }
+
+  export function providerTokenToString(providerToken: ProviderToken): string {
+    const providerIdentifier = toProviderIdentifier(providerToken);
+
+    return providerIdentifierToString(providerIdentifier);
+  }
+
+  export function providerTokensAreEqual(p0: ProviderToken, p1: ProviderToken): boolean {
+    if (p0 === p1) return true;
+
+    const id0 = toProviderIdentifier(p0);
+    const id1 = toProviderIdentifier(p1);
+
+    if (id0 !== id1) return false;
+
+    if (isClassToken(p0) && isClassToken(p1)) {
+      return p0.useClass === p1.useClass;
+    }
+
+    if (isValueToken(p0) && isValueToken(p1)) {
+      return p0.useValue === p1.useValue;
+    }
+
+    if (isFactoryToken(p0) && isFactoryToken(p1)) {
+      if (p0.useFactory !== p1.useFactory) return false;
+
+      // const inject0 = p0.inject ?? [];
+      // const inject1 = p1.inject ?? [];
+
+      // if (inject0.length !== inject1.length) return false;
+
+      // for (let i = 0; i < inject0.length; i++) {
+      //   if (inject0[i] !== inject1[i]) return false;
+      // }
+
+      return true;
+    }
+
+    // At this point, identifiers are equal but tokens are not class/value/factory tokens,
+    // so consider them equal based on identifier alone.
+    return true;
   }
 
   /**
@@ -100,7 +122,7 @@ export namespace ProviderTokenHelpers {
   }
 
   export function tryGetDecoratorScopeFromClass<T = any>(provider: ProviderToken<T>): InjectionScope | undefined {
-    const providerClass = toServiceIdentifier(provider);
+    const providerClass = toProviderIdentifier(provider);
     if (!isClass(providerClass)) return;
 
     const inversifyScope = getClassMetadata(providerClass as any)?.scope;

@@ -1,42 +1,31 @@
 import { Injectable, InjectionScope, ProviderModule } from '../src';
-import { EmptyService, FilledService, GlobalService } from './setup';
+import { EmptyService, FilledService } from './setup';
 
 describe('Injection Scope', () => {
   afterEach(() => jest.clearAllMocks());
 
   describe('Singleton', () => {
     it('should always be the same instance', () => {
-      const m = new ProviderModule({
-        identifier: 'm',
+      const m0 = ProviderModule.create({
+        id: 'm0',
         defaultScope: InjectionScope.Singleton,
         providers: [EmptyService],
       });
 
-      const a = m.get(EmptyService);
-      const b = m.get(EmptyService);
-
-      expect(a).toBe(b);
-    });
-
-    it('should get from the `AppModule` if not in the current module', () => {
-      const m = new ProviderModule({
-        identifier: 'm',
-      });
-
-      expect(m.get(GlobalService)).toBeInstanceOf(GlobalService);
+      expect(m0.get(EmptyService)).toBe(m0.get(EmptyService));
     });
   });
 
   describe('Request', () => {
     it('should be the same instance under the same `get` request', () => {
-      const m = new ProviderModule({
-        identifier: 'm',
+      const m0 = ProviderModule.create({
+        id: 'm0',
         defaultScope: InjectionScope.Request,
         providers: [FilledService, EmptyService],
       });
 
-      const aliceHouse = m.get(FilledService);
-      const bobHouse = m.get(FilledService);
+      const aliceHouse = m0.get(FilledService);
+      const bobHouse = m0.get(FilledService);
 
       expect(aliceHouse.emptyBox).toBe(aliceHouse.emptyCan);
       expect(bobHouse.emptyBox).toBe(bobHouse.emptyCan);
@@ -48,13 +37,13 @@ describe('Injection Scope', () => {
 
   describe('Transient', () => {
     it('should always be a new instance', () => {
-      const m = new ProviderModule({
-        identifier: 'm',
+      const m0 = new ProviderModule({
+        id: 'm0',
         defaultScope: InjectionScope.Transient,
         providers: [EmptyService],
       });
 
-      expect(m.get(EmptyService)).not.toBe(m.get(EmptyService));
+      expect(m0.get(EmptyService)).not.toBe(m0.get(EmptyService));
     });
   });
 
@@ -63,69 +52,67 @@ describe('Injection Scope', () => {
       @Injectable(InjectionScope.Singleton)
       class SingletonService {}
 
-      const m = new ProviderModule({
-        identifier: 'm',
+      const m0 = ProviderModule.create({
+        id: 'm0',
+        defaultScope: InjectionScope.Singleton,
         providers: [
           {
             provide: SingletonService,
             useClass: SingletonService,
             scope: InjectionScope.Transient,
           },
+          {
+            provide: EmptyService,
+            useClass: EmptyService,
+            scope: InjectionScope.Request,
+          },
         ],
       });
 
-      const a = m.get(SingletonService);
-      const b = m.get(SingletonService);
-
-      expect(a).not.toBe(b);
+      expect(m0.get(SingletonService)).not.toBe(m0.get(SingletonService));
+      expect(m0.get(EmptyService)).not.toBe(m0.get(EmptyService));
     });
 
     it('2. should use the `scope` provided to the `Injectable` decorator', () => {
-      @Injectable(InjectionScope.Transient)
+      @Injectable(InjectionScope.Request)
       class TransientService {}
 
-      const m = new ProviderModule({
-        identifier: 'm',
+      const m0 = new ProviderModule({
+        id: 'm0',
         defaultScope: InjectionScope.Singleton,
         providers: [TransientService],
       });
 
-      const a = m.get(TransientService);
-      const b = m.get(TransientService);
-
-      expect(a).not.toBe(b);
+      expect(m0.get(TransientService)).not.toBe(m0.get(TransientService));
     });
 
     it('3. should use the module default `scope`', () => {
-      const m = new ProviderModule({
-        identifier: 'm',
+      const m0 = ProviderModule.create({
+        id: 'm0',
         defaultScope: InjectionScope.Transient,
         providers: [EmptyService],
       });
 
-      const a = m.get(EmptyService);
-      const b = m.get(EmptyService);
-
-      expect(a).not.toBe(b);
+      expect(m0.get(EmptyService)).not.toBe(m0.get(EmptyService));
     });
   });
 
   describe('Imports', () => {
     it('should use the `imported` module `scope`', () => {
-      const m = new ProviderModule({
-        identifier: 'm',
+      const m0 = ProviderModule.create({
+        id: 'm0',
         defaultScope: InjectionScope.Transient,
         providers: [EmptyService],
         exports: [EmptyService],
       });
 
-      const p = new ProviderModule({
-        identifier: 'p',
+      const m1 = ProviderModule.create({
+        id: 'm1',
         defaultScope: InjectionScope.Singleton,
-        imports: [m],
+        imports: [m0],
       });
 
-      expect(p.get(EmptyService)).not.toBe(p.get(EmptyService));
+      expect(m1.get(EmptyService)).not.toBe(m1.get(EmptyService));
     });
   });
 });

@@ -1,4 +1,4 @@
-import { InjectionProviderModuleMissingProviderError, ProviderModule } from '../src';
+import { InjectionProviderModuleMissingProviderError, InjectionScope, ProviderModule } from '../src';
 import { EmptyService, EmptyService2 } from './setup';
 import { EmptyModule } from './setup/modules';
 
@@ -111,6 +111,39 @@ describe('Imports', () => {
       m0.update.addImport(m1);
 
       expect(() => m1.get(EmptyService)).not.toThrow();
+    });
+  });
+
+  describe('Injection Scope', () => {
+    it('imports should retain their original scope', () => {
+      const mb0 = ProviderModule.blueprint({
+        id: 'mb0',
+      });
+
+      const p0 = { provide: EmptyService, useClass: EmptyService, scope: InjectionScope.Transient };
+
+      const mb1 = ProviderModule.blueprint({
+        id: 'mb1',
+        imports: [mb0],
+        providers: [p0],
+        exports: [p0, mb0],
+      });
+
+      const mb2 = ProviderModule.blueprint({
+        id: 'mb2',
+        defaultScope: InjectionScope.Request,
+        imports: [mb1],
+        providers: [EmptyService2],
+        exports: [EmptyService2, mb1],
+      });
+
+      const m0 = ProviderModule.create({
+        id: 'm0',
+        imports: [mb2],
+      });
+
+      expect(m0.get(EmptyService)).not.toBe(m0.get(EmptyService));
+      expect(m0.get(EmptyService2)).not.toBe(m0.get(EmptyService2));
     });
   });
 });

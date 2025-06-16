@@ -147,7 +147,7 @@ export class ImportedModuleContainer {
         if (middlewareResult === false) continue;
 
         // Found it into the `exports` of this imported module.
-        cb(ProviderTokenHelpers.toProviderIdentifier(exportedModuleOrProvider as ProviderToken), this.providerModule);
+        cb(exportedModuleOrProvider as any, this.providerModule);
       }
     }
 

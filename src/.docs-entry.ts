@@ -7,3 +7,4 @@ export type * from './index';
 export type * from './core/container';
 export type * from './core/dynamic-module-definition';
 export type * from './core/middlewares-manager';
+export type * from './core/provider-module-blueprint/interfaces';

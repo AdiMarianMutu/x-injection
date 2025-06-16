@@ -3,7 +3,7 @@ import { ProviderModule, type ProviderModuleOptions } from '../provider-module';
 import type { ModuleBlueprintOptions } from './interfaces';
 
 export class ProviderModuleBlueprint {
-  id: ProviderModuleOptions['id'];
+  id!: ProviderModuleOptions['id'];
   imports?: ProviderModuleOptions['imports'];
   providers?: ProviderModuleOptions['providers'];
   exports?: ProviderModuleOptions['exports'];
@@ -15,25 +15,29 @@ export class ProviderModuleBlueprint {
 
   private readonly blueprintOptions: ModuleBlueprintOptions;
 
-  constructor(
-    { id, imports, providers, exports, defaultScope, isGlobal, onReady, onReset, onDispose }: ProviderModuleOptions,
-    blueprintOptions?: ModuleBlueprintOptions
-  ) {
-    this.id = id;
-    this.imports = imports;
-    this.providers = providers;
-    this.exports = exports;
-    this.defaultScope = defaultScope;
-    this.isGlobal = isGlobal;
-    this.onReady = onReady;
-    this.onReset = onReset;
-    this.onDispose = onDispose;
+  constructor(options: ProviderModuleOptions, blueprintOptions?: ModuleBlueprintOptions) {
+    this.updateDefinition(options);
 
     this.blueprintOptions = {
       autoImportIntoAppModuleWhenGlobal: blueprintOptions?.autoImportIntoAppModuleWhenGlobal ?? true,
     };
 
     this.convertToModuleAndInjectIntoAppModuleIfGlobal();
+  }
+
+  /** Can be used to update the {@link ProviderModuleBlueprint | Blueprint} definition. */
+  updateDefinition(options: ProviderModuleOptions): this {
+    this.id = options.id;
+    this.imports = options.imports;
+    this.providers = options.providers;
+    this.exports = options.exports;
+    this.defaultScope = options.defaultScope;
+    this.isGlobal = options.isGlobal;
+    this.onReady = options.onReady;
+    this.onReset = options.onReset;
+    this.onDispose = options.onDispose;
+
+    return this;
   }
 
   /** Returns the {@link ProviderModuleOptions} of this {@link ProviderModuleBlueprint | Blueprint}. */

@@ -148,15 +148,15 @@ describe('ProviderModuleBlueprint', () => {
     });
 
     it('should modify properties without affecting the original blueprint', () => {
-      const mb0_c0 = mb0.clone();
-
-      mb0_c0.id = 'changed';
-      mb0_c0.imports = [];
-      mb0_c0.providers = [];
-      mb0_c0.exports = [];
-      mb0_c0.onReady = undefined;
-      mb0_c0.onReset = undefined;
-      mb0_c0.onDispose = undefined;
+      const mb0_c0 = mb0.clone().updateDefinition({
+        id: 'changed',
+        imports: [],
+        providers: [],
+        exports: [],
+        onReady: undefined,
+        onReset: undefined,
+        onDispose: undefined,
+      });
 
       expect(mb0.id).toBe('mb0');
       expect(mb0.imports?.length).toBeGreaterThan(0);

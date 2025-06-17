@@ -20,7 +20,8 @@ module.exports = {
     '@typescript-eslint/no-namespace': 'off',
     '@typescript-eslint/ban-types': 'off',
     '@typescript-eslint/no-non-null-assertion': 'off',
-    'prettier/prettier': ['error', require('./.prettierrc.cjs')],
     '@typescript-eslint/no-unused-vars': 'warn',
+    '@typescript-eslint/no-unsafe-function-type': 'off',
+    'prettier/prettier': ['error', require('./.prettierrc.cjs')],
   },
 };

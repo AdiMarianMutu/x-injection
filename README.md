@@ -41,6 +41,7 @@ xInjection&nbsp;<a href="https://www.npmjs.com/package/@adimm/x-injection" targe
 - [Blueprints](#blueprints-1)
   - [Import Behavior](#import-behavior)
   - [isGlobal](#isglobal)
+  - [Definitions](#definitions)
 - [Advanced Usage](#advanced-usage)
   - [Events](#events)
   - [Middlewares](#middlewares)
@@ -408,6 +409,7 @@ A [ProviderToken](https://adimarianmutu.github.io/x-injection/types/ProviderToke
   const THEY_MAY_KNOW_PROVIDER = { provide: CONSTANT_SECRET_PROVIDER, useValue: 'Maybe they know?' };
 
   // As you can see we now have 2 different ProviderTokens which use the same `provide` key.
+  // This means that resolving the `CONSTANT_SECRET_PROVIDER` will return an array of strings.
   ```
 
 - [ProviderFactoryToken](https://adimarianmutu.github.io/x-injection/types/ProviderFactoryToken.html)
@@ -475,6 +477,45 @@ MyModule.update.addProvider(PizzaService, true);
 MyModule.update.addProvider({ provide: HumanService, useClass: FemaleService });
 ```
 
+Now you may probably ask yourself `If we import with the 'addImport' method a new module into an already imported module, will we have access to the providers of that newly imported module?`
+
+The ansuwer is `yes`, we do have access thanks to the _dynamic_ nature of the `ProviderModule` class. Meaning that doing the following will work as expected:
+
+```ts
+const InnerModule = ProviderModule.create({
+  id: 'InnerModule',
+  providers: [FirstService],
+  exports: [FirstService],
+});
+
+const OuterModule = ProviderModule.create({
+  id: 'OuterModule',
+  imports: [InnerModule],
+});
+
+const UnknownModule = ProviderModule.create({
+  id: 'UnknownModule',
+  providers: [SecondService],
+  exports: [SecondService],
+});
+
+InnerModule.update.addImport(UnknownModule);
+
+const secondService = OuterModule.get(SecondService);
+```
+
+The `OuterModule` has now access to the `UnknownModule` exports because it has been _dynamically_ imported _(later at run-time)_ into the `InnerModule` _(which has been imported into `OuterModule` during the `bootstrap` phase)_
+
+Basically what happens is that when a `module` is imported, it takes care of _notify_ the `host` module if its _definiton_ changed.
+
+> [!WARNING]
+>
+> This is a very powerful feature which comes in with some costs, _most of the time negligible_, but if you have an app which has thousand and thousand of `modules` doing this type of _dynamic_ behavior, you may incur in some performance issues which will require proper design to keep under control.
+>
+> _Most of the times the best solution is to leverage the nature of `blueprints`._
+
+---
+
 Sometimes you may actually want to _lazy_ import a `module` from a _file_, this can be done very easily with `xInjection`:
 
 ```ts
@@ -490,13 +531,13 @@ Sometimes you may actually want to _lazy_ import a `module` from a _file_, this 
 >
 > This design pattern is _extremely_ powerful and useful when you may have a lot of `modules` initializing during the app bootstrap process as you can defer their initialization, or even never load them if the user never needs those specific `modules` _(this is mostly applicable on the client-side rather than the server-side)_
 
-Keep reading to understand how you can defer initialization of the modules _both_ `client-side` and `server-side`.
+Keep reading to understand how you can defer initialization of the `modules` by using `blueprints`.
 
 ## Blueprints
 
 The [ProviderModuleBlueprint](https://adimarianmutu.github.io/x-injection/classes/ProviderModuleBlueprint.html) `class` main purpose is to encapsulate the `definitions` of a `Module`, when you do `ProviderModule.blueprint({...})` you are _not_ actually creating an instance of the `ProviderModule` class, but an instance of the `ProviderModuleBlueprint` class.
 
-Before diving into some examples, let's first clarify some important aspects about the behavior of the `blueprint` class.
+> To better understand the above concept; imagine the `blueprint` as being a _dormant_ _(static)_ `module` which is not fully awake _(dynamic)_ till it is actually _imported_ into a `module`.
 
 ### Import Behavior
 
@@ -522,13 +563,38 @@ Now you can decide when to import it into the `AppModule` by doing `AppModule.ad
 
 ---
 
-I highly recommend to take advantage of the `blueprints` nature in order to plan-ahead your `modules` and import them wherever you have to import only when needed;
+I highly recommend to take advantage of the `blueprints` nature in order to plan-ahead your `modules`;
 
 Why?
 
 - To _define module configurations upfront_ without incurring the cost of immediate initialization _(even if negligible)_.
 - To reuse module _definitions across_ different parts of your application while maintaining isolated instances. _(when possible/applicable)_
 - To _compose modules flexibly_, allowing you to adjust module dependencies dynamically before instantiation.
+
+### Definitions
+
+After you have provided the _initial_ `definitons` of a `blueprint`, you can always modify them with the [updateDefinition](https://adimarianmutu.github.io/x-injection/classes/ProviderModuleBlueprint.html#updatedefinition) `method`.
+
+> [!NOTE]
+>
+> Updating the `definitions` of a `blueprint` after has been _imported_ into a `module` will **_not_** propagate those changes to the `module` where it has been imported.
+
+---
+
+This means that we can actually _leverage_ the `blueprints` nature to _defer_ the actual initialization of a `module` by doing so:
+
+```ts
+const UserModuleBp = ProviderModule.blueprint({
+  id: 'UserModule',
+  ...
+});
+
+// Later in your code
+
+const UserModule = ProviderModule.create(UserModuleBp);
+```
+
+The `UserModule` will be created only when _necessary_ and it'll use the same exact definitons which are available into the `UserModuleBp` at the time of the `create` invokation.
 
 ## Advanced Usage
 

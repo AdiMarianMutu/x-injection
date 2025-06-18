@@ -310,7 +310,7 @@ The below list shows them in order of priority _(highest to lowest)_, meaning th
 3. By providing the [defaultScope](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#defaultscope) property when initializing a `ProviderModule`:
    ```ts
    const RainModuleDef = new ProviderModuleDef({
-     identifier: 'RainModule',
+     id: 'RainModule',
      defaultScope: InjectionScope.Transient,
    });
    ```
@@ -812,7 +812,7 @@ const ApiModuleBp = new ProviderModule.blueprint({
 
 // Clone returns a `deep` clone and wraps all the `methods` to break their reference!
 const ApiModuleBpMocked = ApiModuleBp.clone().updateDefinition({
-  identifier: 'ApiModuleMocked',
+  id: 'ApiModuleMocked',
   providers: [
     {
       provide: UserService,

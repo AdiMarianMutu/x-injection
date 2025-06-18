@@ -70,7 +70,9 @@ export declare abstract class IProviderModule {
    *
    * // Later in your code
    *
-   * GarageModuleBlueprint.imports = [...GarageModuleBlueprint.imports, PorscheModule, FerrariModuleBlueprint];
+   * GarageModuleBlueprint.updateDefinition({
+   *  imports: [...GarageModuleBlueprint.imports, PorscheModule, FerrariModuleBlueprint]
+   * });
    *
    * // ...
    *

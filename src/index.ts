@@ -22,6 +22,7 @@ export type {
   ProviderIdentifier,
   ProviderOptions,
   ProviderScopeOption,
+  ModuleOrBlueprint,
   ExportDefinition,
   ExportsDefinition,
   ExportsDefinitionOptimized,

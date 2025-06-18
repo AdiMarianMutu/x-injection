@@ -6,7 +6,9 @@ import type {
   DependencyProvider,
   ExportDefinition,
   ModuleDefinition,
+  ModuleIdentifier,
   ModuleOrBlueprint,
+  ProviderIdentifier,
 } from '../../types';
 import { Signal } from '../../utils';
 import { ImportedModuleContainer, type ModuleContainer } from '../container';
@@ -134,9 +136,11 @@ export class DynamicModuleDefinition implements IDynamicModuleDefinition {
     this.addProvider(provider, addToExports);
   }
 
-  removeImport(module: IProviderModule): boolean {
-    /* istanbul ignore next */
-    if (!this.moduleDef.imports.has(module)) return false;
+  removeImport(moduleOrId: IProviderModule | ModuleIdentifier): boolean {
+    const module = (
+      ProviderModuleHelpers.isModule(moduleOrId) ? moduleOrId : this.getImportedModuleById(moduleOrId)
+    ) as ProviderModule | undefined;
+    if (!module) return false;
 
     const middlewareResult = this.providerModule.middlewaresManager.applyMiddlewares(
       MiddlewareType.BeforeRemoveImport,
@@ -145,7 +149,7 @@ export class DynamicModuleDefinition implements IDynamicModuleDefinition {
 
     if (middlewareResult === false) return false;
 
-    this.unsubscribeFromImportedModuleEvents(module as ProviderModule);
+    this.unsubscribeFromImportedModuleEvents(module);
 
     const importedModuleContainer = this.providerModule.importedModuleContainers.get(module)!;
     importedModuleContainer.dispose();
@@ -162,8 +166,11 @@ export class DynamicModuleDefinition implements IDynamicModuleDefinition {
     return true;
   }
 
-  removeProvider<T>(provider: DependencyProvider<T>): boolean {
-    if (!this.moduleDef.providers.has(provider)) return false;
+  removeProvider<T>(providerOrIdentifier: DependencyProvider<T> | ProviderIdentifier<T>): boolean {
+    const provider = !ProviderTokenHelpers.isProviderIdentifier(providerOrIdentifier)
+      ? providerOrIdentifier
+      : this.getProviderByIdentifier(providerOrIdentifier);
+    if (!provider) return false;
 
     const middlewareResult = this.providerModule.middlewaresManager.applyMiddlewares(
       MiddlewareType.BeforeRemoveProvider,
@@ -215,6 +222,14 @@ export class DynamicModuleDefinition implements IDynamicModuleDefinition {
     }
 
     return true;
+  }
+
+  getImportedModuleById(id: ModuleIdentifier): ProviderModule | undefined {
+    return this.moduleDef.imports.values().find((x) => x.id === id) as ProviderModule;
+  }
+
+  getProviderByIdentifier<T>(identifier: ProviderIdentifier<T>): DependencyProvider<T> | undefined {
+    return this.moduleDef.providers.values().find((x) => ProviderTokenHelpers.toProviderIdentifier(x) === identifier);
   }
 
   emitEventSafely(event: DefinitionEvent): void {

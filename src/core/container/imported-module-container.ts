@@ -51,6 +51,10 @@ export class ImportedModuleContainer {
         const changeIsProvider = !ProviderModuleHelpers.isModule(change);
 
         if (changeIsProvider) {
+          /* istanbul ignore else */
+          // Ignoring the `else if` branch because it is actually covered by the `changeIsProvider && DefinitionEventType.ExportRemoved` which
+          // would basically translate to `DefinitionEventType.ExportProviderRemoved`
+          // but istanbul can't see that.
           if (type === DefinitionEventType.Export) {
             this.proxyProviderIdentifier(change, this.providerModule);
           } else if (type === DefinitionEventType.ExportRemoved) {

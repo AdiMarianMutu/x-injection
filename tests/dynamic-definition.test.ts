@@ -29,13 +29,13 @@ describe('Dynamic Definition', () => {
   describe('Imports', () => {
     it('should import additional modules', () => {
       const m1 = ProviderModule.create({
-        id: 'm1',
+        id: 'm1_to_be_removed',
       });
 
-      m1.update.addImport(m0);
+      m0.update.addImport(m1);
 
-      expect(m1.isImportingModule(m0)).toBe(true);
-      expect(m1.isImportingModule(m0.id)).toBe(true);
+      expect(m0.isImportingModule(m1)).toBe(true);
+      expect(m0.isImportingModule(m1.id)).toBe(true);
     });
 
     it('should lazily import additional modules', async () => {
@@ -64,15 +64,43 @@ describe('Dynamic Definition', () => {
       expect(m2.get(EmptyService)).toBeInstanceOf(EmptyService);
     });
 
-    it('should remove imported module', async () => {
-      const { LazyModule } = await import('./setup/lazy.module');
+    it('should update container providers when imported module updates its export definition', () => {
+      const m1 = ProviderModule.create({
+        id: 'm1',
+      });
 
-      expect(m0.isImportingModule(LazyModule)).toBe(true);
+      m0.update.addImport(m1);
 
-      m0.update.removeImport(LazyModule);
+      const pr0up = { provide: 'update_prov', useValue: 1998 };
+      m1.update.addImport(ProviderModule.create({ id: 'update_mod', providers: [pr0up], exports: [pr0up] }), true);
 
-      expect(m0.isImportingModule(LazyModule)).toBe(false);
-      expect(() => m0.get(LazyModuleService)).toThrow(InjectionProviderModuleMissingProviderError);
+      expect(m0.hasProvider(pr0up)).toBe(true);
+      expect(m0.get(pr0up)).toBe(1998);
+    });
+
+    describe('Remove', () => {
+      it('should remove imported module by `reference`', async () => {
+        const { LazyModule } = await import('./setup/lazy.module');
+
+        expect(m0.isImportingModule(LazyModule)).toBe(true);
+
+        m0.update.removeImport(LazyModule);
+
+        expect(m0.isImportingModule(LazyModule)).toBe(false);
+        expect(() => m0.get(LazyModuleService)).toThrow(InjectionProviderModuleMissingProviderError);
+      });
+
+      it('should remove imported module by `id`', async () => {
+        expect(m0.isImportingModule('m1_to_be_removed')).toBe(true);
+
+        m0.update.removeImport('m1_to_be_removed');
+
+        expect(m0.isImportingModule('m1_to_be_removed')).toBe(false);
+      });
+
+      it('should fail to remove module', () => {
+        expect(m0.update.removeImport('not existing')).toBe(false);
+      });
     });
   });
 
@@ -116,27 +144,6 @@ describe('Dynamic Definition', () => {
       expect(m2.get(p0)).toBe(p0.useValue);
     });
 
-    it('should remove provider', () => {
-      m0.update.removeProvider(p0);
-      m0.update.removeProvider(LAZY_PROVIDER);
-
-      expect(m0.hasProvider(p0)).toBe(false);
-      expect(m0.hasProvider(LAZY_PROVIDER)).toBe(false);
-      expect(() => m0.get(p0)).toThrow(InjectionProviderModuleMissingProviderError);
-      expect(() => m0.get(LAZY_PROVIDER)).toThrow(InjectionProviderModuleMissingProviderError);
-    });
-
-    it('should fail to remove provider', () => {
-      const m1 = new ProviderModule({
-        id: 'm1',
-        providers: [EmptyService],
-      });
-
-      m1.definition.providers.delete(EmptyService);
-
-      expect(m1.update.removeProvider(EmptyService)).toBe(false);
-    });
-
     it('should check if has imported provider', () => {
       const m1 = ProviderModule.create({
         id: 'm1',
@@ -151,6 +158,44 @@ describe('Dynamic Definition', () => {
 
       expect(m2.hasProvider(EmptyService)).toBe(true);
       expect(m2.hasProvider(EmptyService2)).toBe(false);
+    });
+
+    describe('Remove', () => {
+      it('should remove provider by `reference`', () => {
+        m0.update.removeProvider(p0);
+        m0.update.removeProvider(LAZY_PROVIDER);
+
+        expect(m0.hasProvider(p0)).toBe(false);
+        expect(m0.hasProvider(LAZY_PROVIDER)).toBe(false);
+        expect(() => m0.get(p0)).toThrow(InjectionProviderModuleMissingProviderError);
+        expect(() => m0.get(LAZY_PROVIDER)).toThrow(InjectionProviderModuleMissingProviderError);
+      });
+
+      it('should remove provider by `provide` key value', () => {
+        const p1 = {
+          provide: 'p1_to_be_deleted',
+          useValue: 0,
+        };
+
+        m0.update.addProvider(p1);
+
+        expect(m0.hasProvider(p1)).toBe(true);
+
+        m0.update.removeProvider('p1_to_be_deleted');
+
+        expect(m0.hasProvider('p1_to_be_deleted')).toBe(false);
+      });
+
+      it('should fail to remove provider', () => {
+        const m1 = new ProviderModule({
+          id: 'm1',
+          providers: [EmptyService],
+        });
+
+        m1.definition.providers.delete(EmptyService);
+
+        expect(m1.update.removeProvider(EmptyService)).toBe(false);
+      });
     });
   });
 

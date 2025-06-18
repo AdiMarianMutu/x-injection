@@ -499,7 +499,7 @@ const UnknownModule = ProviderModule.create({
   exports: [SecondService],
 });
 
-InnerModule.update.addImport(UnknownModule);
+InnerModule.update.addImport(UnknownModule, true); // Don't forget to provide `true` to the `addToExports` optional parameter!
 
 const secondService = OuterModule.get(SecondService);
 ```
@@ -543,13 +543,9 @@ The [ProviderModuleBlueprint](https://adimarianmutu.github.io/x-injection/classe
 
 Whenever you _import_ a `blueprint` into a `module`, it'll automatically be "transformed" to a `ProviderModule` instance by the engine, this step is crucial as a `blueprint` per se does not contain a _container_, just its _definitions_.
 
-This has a "gotcha", because the conversion happens internally, you'll "not" be able to get a reference to that imported module, not directly at least _(I may change this in a future patch)_, this means that if you don't have the reference of the `ProviderModule`, you can't remove it from the _imported_ module _(if you'll ever need to remove it)_.
-
 > [!NOTE]
 >
-> There's currently an workaround for this, you can `subscribe` to the `Import` event and get from there the `ProviderModule` instance, just make sure to check the `id` of the module via `module.toString()` when doing so.
-
-It is also important, to understand the _injection_ `scope` of an imported `blueprint`; we previously learned that when we import a `blueprint` into a `module` it automatically creates an instance of the `ProviderModule` from it, this means that all the `singleton` providers of the `blueprint` definition are now _scoped singleton_, where _scoped_ means _singleton in relation to their imported module_.
+> Therefore it is important to understand the _injection_ `scope` of an imported `blueprint`; we previously learned that when we import a `blueprint` into a `module` it automatically creates an instance of the `ProviderModule` from it, this means that all the `singleton` providers of the `blueprint` definition are now _scoped singleton_, where _scoped_ means _singleton in relation to their imported module_.
 
 ### isGlobal
 

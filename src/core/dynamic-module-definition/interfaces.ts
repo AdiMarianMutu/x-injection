@@ -1,5 +1,12 @@
 import type { DefinitionEventType } from '../../enums';
-import type { AsyncMethod, DependencyProvider, ExportDefinition, ModuleOrBlueprint } from '../../types';
+import type {
+  AsyncMethod,
+  DependencyProvider,
+  ExportDefinition,
+  ModuleIdentifier,
+  ModuleOrBlueprint,
+  ProviderIdentifier,
+} from '../../types';
 import type { Signal } from '../../utils';
 import type { IProviderModule } from '../provider-module';
 
@@ -57,9 +64,9 @@ export interface IDynamicModuleDefinition {
    *
    * **Note:** _You can always add it back with the {@link addImport} or {@link addImportLazy} methods._
    *
-   * @param module The {@link IProviderModule | Module} to be removed.
+   * @param moduleOrId Either the `module` reference itself or its `id`.
    */
-  removeImport(module: IProviderModule): boolean;
+  removeImport(moduleOrId: IProviderModule | ModuleIdentifier): boolean;
 
   /**
    * Can be used to remove a `provider` from the _current_ {@link IProviderModule | Module}'s `container`.
@@ -67,9 +74,9 @@ export interface IDynamicModuleDefinition {
    *
    * **Note:** _You can always add it back with the {@link addProvider} or {@link addProviderLazy} methods._
    *
-   * @param provider The {@link DependencyProvider | Provider} to be removed.
+   * @param providerOrIdentifier Either the `provider` reference itself or its `{ provide }` property value.
    */
-  removeProvider<T>(provider: DependencyProvider<T>): boolean;
+  removeProvider<T>(providerOrIdentifier: DependencyProvider<T> | ProviderIdentifier<T>): boolean;
 
   /**
    * Can be used to remove a {@link IProviderModule | Module} or {@link DependencyProvider | Provider} from

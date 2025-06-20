@@ -14,6 +14,6 @@ export default defineConfig({
     },
   },
   splitting: false,
-  sourcemap: true,
+  sourcemap: false,
   target: 'esnext',
 });

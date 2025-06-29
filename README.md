@@ -1,8 +1,8 @@
-<h1 align="center">
-xInjection&nbsp;<a href="https://www.npmjs.com/package/@adimm/x-injection" target="__blank"><img src="https://badgen.net/npm/v/@adimm/x-injection"></a>
+<p align="center">
+<img width="260px" height="auto" alt="xInjection Logo" src="https://raw.githubusercontent.com/AdiMarianMutu/x-injection/main/assets/logo.png"><br /><a href="https://www.npmjs.com/package/@adimm/x-injection" target="__blank"><img src="https://badgen.net/npm/v/@adimm/x-injection"></a>
 <a href="https://app.codecov.io/gh/AdiMarianMutu/x-injection" target="__blank"><img src="https://badgen.net/codecov/c/github/AdiMarianMutu/x-injection"></a>
 <img src="https://badgen.net/npm/license/@adimm/x-injection">
-</h1>
+</p>
 
 <p align="center">
 <a href="https://github.com/AdiMarianMutu/x-injection/actions/workflows/ci.yml?query=branch%3Amain" target="__blank"><img src="https://github.com/AdiMarianMutu/x-injection/actions/workflows/ci.yml/badge.svg?branch=main"></a>
@@ -10,6 +10,7 @@ xInjection&nbsp;<a href="https://www.npmjs.com/package/@adimm/x-injection" targe
 <br>
 <img src="https://badgen.net/bundlephobia/minzip/@adimm/x-injection">
 <a href="https://www.npmjs.com/package/@adimm/x-injection" target="__blank"><img src="https://badgen.net/npm/dm/@adimm/x-injection"></a>
+
 </p>
 
 ## Table of Contents
@@ -850,6 +851,7 @@ Please ensure your contributions adhere to the project's code style. See the rep
 
 - [Adi-Marian Mutu](https://www.linkedin.com/in/mutu-adi-marian/) - Author of `xInjection`
 - [InversifyJS](https://github.com/inversify/monorepo) - Base lib
+- [Alexandru Turica](https://www.linkedin.com/in/alexandru-turica-82215522b/) - Official Logo
 
 ---
 

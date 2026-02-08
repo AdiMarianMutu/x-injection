@@ -3,7 +3,7 @@ export * from './errors';
 export * from './enums';
 export * from './helpers';
 
-export { AppModule, ProviderModule, ProviderModuleBlueprint } from './core';
+export { AppModule, ProviderModule, ProviderModuleBlueprint, ProviderModuleClass } from './core';
 
 export type {
   IProviderModule,

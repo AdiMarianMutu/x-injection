@@ -20,6 +20,10 @@
 - [Features](#features)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
+- [OOP-Style Modules](#oop-style-modules)
+  - [Basic OOP Module](#basic-oop-module)
+  - [Advanced OOP Patterns](#advanced-oop-patterns)
+  - [When to Use OOP vs Functional](#when-to-use-oop-vs-functional)
 - [Core Concepts](#core-concepts)
   - [ProviderModule](#providermodule)
   - [AppModule](#appmodule)
@@ -112,6 +116,184 @@ const AuthModule = ProviderModule.create({
 const authService = AuthModule.get(AuthService);
 console.log(authService.login('123')); // "Logged in as John Doe"
 ```
+
+## OOP-Style Modules
+
+For developers who prefer class-based architecture, xInjection provides `ProviderModuleClass` - a composition-based wrapper that prevents naming conflicts between your custom methods and the DI container methods.
+
+### Basic OOP Module
+
+```ts
+import { Injectable, ProviderModuleClass } from '@adimm/x-injection';
+
+@Injectable()
+class UserService {
+  get(id: string) {
+    return { id, name: 'John Doe' };
+  }
+}
+
+@Injectable()
+class AuthService {
+  constructor(private userService: UserService) {}
+
+  login(userId: string) {
+    const user = this.userService.get(userId);
+    return `Logged in as ${user.name}`;
+  }
+}
+
+// OOP-style module extending ProviderModuleClass
+class AuthModule extends ProviderModuleClass {
+  constructor() {
+    super({
+      id: 'AuthModule',
+      providers: [UserService, AuthService],
+      exports: [AuthService],
+    });
+  }
+
+  authenticateUser(userId: string): string {
+    const authService = this.module.get(AuthService);
+    return authService.login(userId);
+  }
+
+  getUserById(userId: string) {
+    const userService = this.module.get(UserService);
+    return userService.get(userId);
+  }
+}
+
+// Instantiate and use
+const authModule = new AuthModule();
+console.log(authModule.authenticateUser('123')); // "Logged in as John Doe"
+
+// All ProviderModule methods are available through the `.module` property
+const authService = authModule.module.get(AuthService);
+authModule.module.update.addProvider(NewService);
+```
+
+### Advanced OOP Patterns
+
+**Module with Initialization Logic:**
+
+```ts
+class DatabaseModule extends ProviderModuleClass {
+  private isConnected = false;
+
+  constructor() {
+    super({
+      id: 'DatabaseModule',
+      providers: [DatabaseService, ConnectionPool],
+      exports: [DatabaseService],
+      onReady: async (module) => {
+        console.log('DatabaseModule ready!');
+      },
+    });
+  }
+
+  async connect(): Promise<void> {
+    const dbService = this.module.get(DatabaseService);
+    await dbService.connect();
+    this.isConnected = true;
+  }
+
+  getConnectionStatus(): boolean {
+    return this.isConnected;
+  }
+}
+
+const dbModule = new DatabaseModule();
+await dbModule.connect();
+console.log(dbModule.getConnectionStatus()); // true
+```
+
+**Module with Computed Properties:**
+
+```ts
+class ApiModule extends ProviderModuleClass {
+  constructor() {
+    super({
+      id: 'ApiModule',
+      imports: [ConfigModule, LoggerModule],
+      providers: [ApiService, HttpClient],
+      exports: [ApiService],
+    });
+  }
+
+  // Computed property - lazy evaluation
+  get apiService(): ApiService {
+    return this.module.get(ApiService);
+  }
+
+  get httpClient(): HttpClient {
+    return this.module.get(HttpClient);
+  }
+
+  // Business logic using multiple services
+  async makeAuthenticatedRequest(url: string, token: string) {
+    const client = this.httpClient;
+    return client.request(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+}
+
+const apiModule = new ApiModule();
+const response = await apiModule.makeAuthenticatedRequest('/users', 'token');
+```
+
+**Module Composition:**
+
+```ts
+class BaseModule extends ProviderModuleClass {
+  protected logAction(action: string): void {
+    const logger = this.module.get(LoggerService);
+    logger.log(`[${String(this.module.id)}] ${action}`);
+  }
+}
+
+class UserModule extends BaseModule {
+  constructor() {
+    super({
+      id: 'UserModule',
+      providers: [UserService, UserRepository],
+      exports: [UserService],
+    });
+  }
+
+  createUser(name: string) {
+    this.logAction(`Creating user: ${name}`);
+    const userService = this.module.get(UserService);
+    return userService.create(name);
+  }
+
+  deleteUser(id: string) {
+    this.logAction(`Deleting user: ${id}`);
+    const userService = this.module.get(UserService);
+    return userService.delete(id);
+  }
+}
+```
+
+### When to Use OOP vs Functional
+
+**Use OOP-style (`extends ProviderModuleClass`) when:**
+
+- You need custom business logic methods on the module itself
+- You prefer class-based architecture
+- You want computed properties or getters for providers
+- You need initialization logic or state management in the module
+- You're building a complex module with multiple related operations
+
+**Use Functional-style (`ProviderModule.create()`) when:**
+
+- You only need dependency injection without custom logic
+- You prefer functional composition
+- You want simpler, more concise code
+- You're creating straightforward provider containers
+
+**Key Point:** Both styles are fully compatible and can be mixed within the same application. `ProviderModuleClass` uses composition (contains a `ProviderModule` as `this.module`), preventing method name conflicts while providing identical DI functionality.
 
 ## Core Concepts
 

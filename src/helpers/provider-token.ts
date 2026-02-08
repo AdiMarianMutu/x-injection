@@ -1,5 +1,7 @@
 import { getClassMetadata } from '@inversifyjs/core';
 
+import { ProviderModule, type IProviderModule } from '../core/provider-module';
+import { ProviderModuleBlueprint } from '../core/provider-module-blueprint/provider-module-blueprint';
 import { InjectionScope } from '../enums';
 import type {
   ProviderClassToken,
@@ -10,10 +12,8 @@ import type {
   ProviderToken,
   ProviderValueToken,
 } from '../types';
-import { isClass } from './is-class';
-import { isClassOrFunction } from './is-class-or-function';
-import { isPlainObject } from './is-plain-object';
 import { bindingScopeToInjectionScope } from './scope-converter';
+import { isClass, isClassOrFunction, isPlainObject } from './type-guards';
 
 export namespace ProviderTokenHelpers {
   export function isClassToken<T>(provider: ProviderToken<T>): provider is ProviderClassToken<T> {
@@ -133,5 +133,29 @@ export namespace ProviderTokenHelpers {
 
   function hasProvideProperty(provider: any): provider is object {
     return isPlainObject(provider) && typeof provider === 'object' && 'provide' in provider;
+  }
+}
+
+export namespace ProviderModuleHelpers {
+  export function isModule(value: any): value is IProviderModule {
+    return value instanceof ProviderModule;
+  }
+
+  export function isBlueprint(value: any): value is ProviderModuleBlueprint {
+    return value instanceof ProviderModuleBlueprint;
+  }
+
+  export function isModuleOrBlueprint(value: any): value is IProviderModule | ProviderModuleBlueprint {
+    return isModule(value) || isBlueprint(value);
+  }
+
+  export function tryBlueprintToModule(value: IProviderModule | ProviderModuleBlueprint): IProviderModule {
+    if (!(value instanceof ProviderModuleBlueprint)) return value;
+
+    return blueprintToModule(value);
+  }
+
+  export function blueprintToModule(moduleBlueprint: ProviderModuleBlueprint): IProviderModule {
+    return ProviderModule.create(moduleBlueprint.getDefinition());
   }
 }

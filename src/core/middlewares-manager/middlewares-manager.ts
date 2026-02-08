@@ -28,36 +28,45 @@ export class MiddlewaresManager implements IMiddlewaresManager {
     if (this.middlewaresMap === null) throw new InjectionProviderModuleDisposedError(this.providerModule);
 
     const middlewares = this.middlewaresMap.get(type);
+    if (!middlewares) return args[0];
 
     switch (type) {
       case MiddlewareType.BeforeAddImport:
       case MiddlewareType.BeforeAddProvider:
-        if (!middlewares) return args[0];
-
-        let chainedArg = args[0];
-
-        for (const middleware of middlewares) {
-          const result = middleware(chainedArg);
-
-          if (result === false) return false as T;
-          if (result === true) continue;
-
-          chainedArg = result;
-        }
-
-        return chainedArg;
+        return this.applyChainMiddleware(middlewares, ...args);
 
       case MiddlewareType.BeforeGet:
-        return !middlewares
-          ? args[0]
-          : middlewares.reduce((arg, middleware) => middleware(arg, args[1], args[2]), args[0]);
+        return this.applyReduceMiddleware(middlewares, ...args);
 
       case MiddlewareType.BeforeRemoveImport:
       case MiddlewareType.BeforeRemoveProvider:
       case MiddlewareType.BeforeRemoveExport:
       case MiddlewareType.OnExportAccess:
-        return (!middlewares || !middlewares.some((middleware) => !middleware(args[0], args[1]))) as T;
+        return this.applyBooleanMiddleware(middlewares, ...args) as T;
     }
+  }
+
+  private applyChainMiddleware<T>(middlewares: Function[], ...args: any[]): T {
+    let chainedArg = args[0];
+
+    for (const middleware of middlewares) {
+      const result = middleware(chainedArg);
+
+      if (result === false) return false as T;
+      if (result === true) continue;
+
+      chainedArg = result;
+    }
+
+    return chainedArg;
+  }
+
+  private applyReduceMiddleware(middlewares: Function[], ...args: any[]): any {
+    return middlewares.reduce((arg, middleware) => middleware(arg, args[1], args[2]), args[0]);
+  }
+
+  private applyBooleanMiddleware(middlewares: Function[], ...args: any[]): boolean {
+    return !middlewares.some((middleware) => !middleware(args[0], args[1]));
   }
 
   clear(): void {

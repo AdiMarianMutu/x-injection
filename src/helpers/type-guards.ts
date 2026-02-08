@@ -5,6 +5,8 @@
  * Released under the MIT License.
  */
 
+import type { Class } from 'type-fest';
+
 function isObject(o: any): boolean {
   return Object.prototype.toString.call(o) === '[object Object]';
 }
@@ -27,4 +29,14 @@ export function isPlainObject(o: any): o is object {
 
   // Most likely a plain Object
   return true;
+}
+
+export function isClass(v: any): boolean {
+  if (typeof v !== 'function') return false;
+
+  return Function.prototype.toString.call(v).startsWith('class ');
+}
+
+export function isClassOrFunction(value: any): value is Function | Class<any> {
+  return typeof value === 'function';
 }

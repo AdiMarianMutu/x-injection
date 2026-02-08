@@ -56,13 +56,9 @@ export class DynamicModuleDefinition implements IDynamicModuleDefinition {
   addImport(moduleOrBlueprint: ModuleOrBlueprint, addToExports = false): void {
     let providerModule = ProviderModuleHelpers.tryBlueprintToModule(moduleOrBlueprint) as ProviderModule;
 
-    const middlewareResult = this.providerModule.middlewaresManager.applyMiddlewares<ProviderModule | false>(
-      MiddlewareType.BeforeAddImport,
-      providerModule
-    );
-
-    if (middlewareResult === false) return;
-    providerModule = middlewareResult;
+    const result = this.applyMiddlewareGuard(MiddlewareType.BeforeAddImport, providerModule);
+    if (result === false) return;
+    providerModule = result;
 
     this.moduleDef.imports.add(providerModule);
 
@@ -92,13 +88,9 @@ export class DynamicModuleDefinition implements IDynamicModuleDefinition {
   }
 
   addProvider<T>(provider: DependencyProvider<T>, addToExports = false): void {
-    const middlewareResult = this.providerModule.middlewaresManager.applyMiddlewares<DependencyProvider<T> | false>(
-      MiddlewareType.BeforeAddProvider,
-      provider
-    );
-
-    if (middlewareResult === false) return;
-    provider = middlewareResult;
+    const result = this.applyMiddlewareGuard(MiddlewareType.BeforeAddProvider, provider);
+    if (result === false) return;
+    provider = result;
 
     this.moduleDef.providers.add(provider);
 
@@ -130,12 +122,7 @@ export class DynamicModuleDefinition implements IDynamicModuleDefinition {
     ) as ProviderModule | undefined;
     if (!module) return false;
 
-    const middlewareResult = this.providerModule.middlewaresManager.applyMiddlewares(
-      MiddlewareType.BeforeRemoveImport,
-      module
-    );
-
-    if (middlewareResult === false) return false;
+    if (this.applyMiddlewareGuard(MiddlewareType.BeforeRemoveImport, module) === false) return false;
 
     this.unsubscribeFromImportedModuleEvents(module);
 
@@ -160,12 +147,7 @@ export class DynamicModuleDefinition implements IDynamicModuleDefinition {
       : this.getProviderByIdentifier(providerOrIdentifier);
     if (!provider) return false;
 
-    const middlewareResult = this.providerModule.middlewaresManager.applyMiddlewares(
-      MiddlewareType.BeforeRemoveProvider,
-      provider
-    );
-
-    if (middlewareResult === false) return false;
+    if (this.applyMiddlewareGuard(MiddlewareType.BeforeRemoveProvider, provider) === false) return false;
 
     this.moduleDef.providers.delete(provider);
     this.moduleContainer.container.unbindSync(ProviderTokenHelpers.toProviderIdentifier(provider));
@@ -183,12 +165,7 @@ export class DynamicModuleDefinition implements IDynamicModuleDefinition {
   removeFromExports(exportDefinition: ExportDefinition): boolean {
     if (!this.moduleDef.exports.has(exportDefinition)) return false;
 
-    const middlewareResult = this.providerModule.middlewaresManager.applyMiddlewares(
-      MiddlewareType.BeforeRemoveExport,
-      exportDefinition
-    );
-
-    if (middlewareResult === false) return false;
+    if (this.applyMiddlewareGuard(MiddlewareType.BeforeRemoveExport, exportDefinition) === false) return false;
 
     this.moduleDef.exports.delete(exportDefinition);
 
@@ -316,5 +293,10 @@ export class DynamicModuleDefinition implements IDynamicModuleDefinition {
 
     unsubscribe();
     this.importedModuleSubscriptions.delete(importedModule);
+  }
+
+  private applyMiddlewareGuard<T>(type: MiddlewareType, value: T): T | false {
+    const result = this.providerModule.middlewaresManager.applyMiddlewares<T | false>(type, value);
+    return result === false ? false : result;
   }
 }

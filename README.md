@@ -19,85 +19,52 @@
 - [Overview](#overview)
 - [Features](#features)
 - [Installation](#installation)
-  - [TypeScript Configuration](#typescript-configuration)
-- [Getting Started](#getting-started)
-  - [Quick Start](#quick-start)
-  - [Glossary](#glossary)
-    - [ProviderModule](#providermodule)
-    - [AppModule](#appmodule)
-    - [Blueprint](#blueprint)
-    - [Definition](#definition)
-  - [Conventions](#conventions)
-    - [ProviderModule](#providermodule-1)
-    - [Blueprints](#blueprints)
-    - [ProviderToken](#providertoken)
-  - [AppModule](#appmodule-1)
-- [ProviderModule API](#providermodule-api)
-- [Injection Scope](#injection-scope)
-  - [Singleton](#singleton)
+- [Quick Start](#quick-start)
+- [Core Concepts](#core-concepts)
+  - [ProviderModule](#providermodule)
+  - [AppModule](#appmodule)
+  - [Blueprints](#blueprints)
+  - [Provider Tokens](#provider-tokens)
+- [Injection Scopes](#injection-scopes)
+  - [Singleton (Default)](#singleton-default)
   - [Transient](#transient)
   - [Request](#request)
-- [Provider Tokens](#provider-tokens)
-- [Provider Modules](#provider-modules)
-- [Blueprints](#blueprints-1)
-  - [Import Behavior](#import-behavior)
-  - [isGlobal](#isglobal)
-  - [Definitions](#definitions)
-- [Advanced Usage](#advanced-usage)
+- [Module System](#module-system)
+  - [Import/Export Pattern](#importexport-pattern)
+  - [Re-exporting Modules](#re-exporting-modules)
+  - [Dynamic Module Updates](#dynamic-module-updates)
+  - [Global Modules](#global-modules)
+- [Advanced Features](#advanced-features)
   - [Events](#events)
   - [Middlewares](#middlewares)
-  - [Internals](#internals)
-    - [ProviderModule](#providermodule-2)
-    - [MiddlewaresManager](#middlewaresmanager)
-    - [ModuleContainer](#modulecontainer)
-    - [ImportedModuleContainer](#importedmodulecontainer)
-    - [DynamicModuleDefinition](#dynamicmoduledefinition)
-    - [ProviderModuleBlueprint](#providermoduleblueprint)
-    - [Set of Helpers](#set-of-helpers)
-- [Unit Tests](#unit-tests)
-- [Documentation](#documentation)
-- [ReactJS Implementation](#reactjs-implementation)
+- [Testing](#testing)
+- [Resources](#resources)
 - [Contributing](#contributing)
 - [Credits](#credits)
+- [License](#license)
 
 ## Overview
 
-**xInjection** is a robust Inversion of Control [(IoC)](https://en.wikipedia.org/wiki/Inversion_of_control) library that extends [InversifyJS](https://github.com/inversify/InversifyJS) with a modular, [NestJS](https://github.com/nestjs/nest)-inspired Dependency Injection [(DI)](https://en.wikipedia.org/wiki/Dependency_injection) system. It enables you to **encapsulate** dependencies with fine-grained control using **[ProviderModule](https://adimarianmutu.github.io/x-injection/classes/IProviderModule.html)** classes, allowing for clean **separation** of concerns and **scalable** architecture.
-
-Each `ProviderModule` manages its _own_ container, supporting easy **decoupling** and _explicit_ control over which providers are **exported** and **imported** across modules. The global **[AppModule](https://adimarianmutu.github.io/x-injection/variables/AppModule.html)** is always available, ensuring a seamless foundation for your application's DI needs.
+**xInjection** is a powerful [Dependency Injection](https://en.wikipedia.org/wiki/Dependency_injection) library built on [InversifyJS](https://github.com/inversify/InversifyJS), inspired by [NestJS](https://github.com/nestjs/nest)'s modular architecture. It provides fine-grained control over dependency encapsulation through a module-based system where each module manages its own container with explicit import/export boundaries.
 
 ## Features
 
-- **NestJS-inspired module system:** Import and export providers between modules.
-- **Granular dependency encapsulation:** Each module manages its own container.
-- **Flexible provider scopes:** [Singleton](https://adimarianmutu.github.io/x-injection/enums/InjectionScope.html#singleton), [Request](https://adimarianmutu.github.io/x-injection/enums/InjectionScope.html#request), and [Transient](https://adimarianmutu.github.io/x-injection/enums/InjectionScope.html#transient) lifecycles.
-- **Lifecycle hooks:** [onReady](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#onready), [onReset](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#onreset) and [onDispose](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#ondispose) for _module_ initialization and cleanup.
-- **Middlewares:** Tap into the low-level implementation without any effort by just adding new `middlewares`.
-- **Events:** Subscribe to internal events for maximum control.
-- **Blueprints:** Plan ahead your `modules` without eagerly instantiating them.
-- **Fully Agnostic:** It doesn't rely on any framework, just on [InversifyJS](https://inversify.io/) as it uses it under-the-hood to build the containers. It works the same both client side and server side.
+- **Modular Architecture** - NestJS-style import/export system for clean dependency boundaries
+- **Isolated Containers** - Each module manages its own InversifyJS container
+- **Flexible Scopes** - Singleton, Transient, and Request-scoped providers
+- **Lazy Loading** - Blueprint pattern for deferred module instantiation
+- **Lifecycle Hooks** - `onReady`, `onReset`, `onDispose` for module lifecycle management
+- **Events & Middlewares** - Deep customization through event subscriptions and middleware chains
+- **Framework Agnostic** - Works in Node.js and browser environments
+- **TypeScript First** - Full type safety with decorator support
 
 ## Installation
 
-First, ensure you have [`reflect-metadata`](https://www.npmjs.com/package/reflect-metadata) installed:
-
-```sh
-npm i reflect-metadata
+```bash
+npm install @adimm/x-injection reflect-metadata
 ```
 
-> [!NOTE]
->
-> You may have to add `import 'reflect-metadata'` at the entry point of your application.
-
-Then install `xInjection`:
-
-```sh
-npm i @adimm/x-injection
-```
-
-### TypeScript Configuration
-
-Add the following options to your `tsconfig.json` to enable decorator metadata:
+**TypeScript Configuration** (`tsconfig.json`):
 
 ```json
 {
@@ -108,753 +75,427 @@ Add the following options to your `tsconfig.json` to enable decorator metadata:
 }
 ```
 
-## Getting Started
+Import `reflect-metadata` at your application's entry point:
 
-### Quick Start
+```ts
+import 'reflect-metadata';
+```
+
+## Quick Start
 
 ```ts
 import { Injectable, ProviderModule } from '@adimm/x-injection';
 
 @Injectable()
-class HelloService {
-  sayHello() {
-    return 'Hello, world!';
+class UserService {
+  getUser(id: string) {
+    return { id, name: 'John Doe' };
   }
 }
 
-const HelloModule = ProviderModule.create({
-  id: 'HelloModule',
-  providers: [HelloService],
-  exports: [HelloService],
+@Injectable()
+class AuthService {
+  constructor(private userService: UserService) {}
+
+  login(userId: string) {
+    const user = this.userService.getUser(userId);
+    return `Logged in as ${user.name}`;
+  }
+}
+
+const AuthModule = ProviderModule.create({
+  id: 'AuthModule',
+  providers: [UserService, AuthService],
+  exports: [AuthService],
 });
 
-const helloService = HelloModule.get(HelloService);
-
-console.log(helloService.sayHello());
-// => 'Hello, world!'
+const authService = AuthModule.get(AuthService);
+console.log(authService.login('123')); // "Logged in as John Doe"
 ```
 
-### Glossary
+## Core Concepts
 
-#### ProviderModule
+### ProviderModule
 
-The core class of `xInjection`, if you ever worked with [NestJS](https://nestjs.com/) _(or [Angular](https://angular.dev/))_, you'll find it very familiar.
+The fundamental building block of xInjection. Similar to NestJS modules, each `ProviderModule` encapsulates related providers with explicit control over what's exposed.
 
 ```ts
-const GarageModule = ProviderModule.create({ id: 'GarageModule', imports: [], providers: [], exports: [] });
+const DatabaseModule = ProviderModule.create({
+  id: 'DatabaseModule',
+  imports: [ConfigModule], // Modules to import
+  providers: [DatabaseService], // Services to register
+  exports: [DatabaseService], // What to expose to importers
+});
 ```
 
-#### AppModule
+**Key Methods:**
 
-It is a special instance of the `ProviderModule` class which acts as the `root` of your `modules` graph, all _global_ modules will be automatically imported into the `AppModule` and shared across all your modules.
+- `Module.get(token)` - Resolve a provider instance
+- `Module.update.addProvider()` - Dynamically add providers
+- `Module.update.addImport()` - Import other modules at runtime
+- `Module.dispose()` - Clean up module resources
 
-#### Blueprint
-
-Another core class which most probably you'll end using a lot too, to keep it short, it allows you to plan ahead the `modules` without instantiating them.
-
-```ts
-const CarModuleBlueprint = ProviderModule.blueprint({ id: 'CarModule', imports: [], providers: [], exports: [] });
-```
-
-#### Definition
-
-It is used to refer to the three main blocks of a module:
-
-- [imports](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#imports)
-- [providers](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#providers)
-- [exports](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#exports)
-
-### Conventions
-
-The library has some opinionated _naming_ conventions which you should adopt too
-
-#### ProviderModule
-
-All variables holding an _instance_ of a `ProviderModule` should be written in [PascalCase](https://www.wikidata.org/wiki/Q9761807) and _suffixed_ with `Module`, like this:
-
-```ts
-const DatabaseModule = ProviderModule.create({...});
-const UserModule = ProviderModule.create({...});
-const CarPartsModule = ProviderModule.create({...});
-```
-
-The `id` property of the `ProviderModule.options` should be the same as the `module` variable name.
-
-```ts
-const DatabaseModule = ProviderModule.create({ id: 'DatabaseModule' });
-const UserModule = ProviderModule.create({ id: 'UserModule' });
-const CarPartsModule = ProviderModule.create({ id: 'CarPartsModule' });
-```
-
-If you are exporting a `module` from a designated file, then you should name that file as following:
-
-```
-database.module.ts
-user.module.ts
-car-parts.module.ts
-```
-
-> [!TIP]
->
-> If you install/use the [Material Icon Theme](https://marketplace.visualstudio.com/items?itemName=PKief.material-icon-theme) VS Code extension, you'll see the `*.module.ts` files with a specific icon.
-
-#### Blueprints
-
-All variables holding an _instance_ of a `ProviderModuleBlueprint` should be written in [PascalCase](https://www.wikidata.org/wiki/Q9761807) too and _suffixed_ with `ModuleBp`, like this:
-
-```ts
-const DatabaseModuleBp = ProviderModule.blueprint({...});
-const UserModuleBp = ProviderModule.blueprint({...});
-const CarPartsModuleBp = ProviderModule.blueprint({...});
-```
-
-The `id` property of the `ProviderModuleBlueprint.options` should **not** end with `Bp` because when you'll import that `blueprint` into a `module`, the exact provided `id` will be used!
-
-```ts
-const DatabaseModuleBp = ProviderModule.create({ id: 'DatabaseModule' });
-const UserModuleBp = ProviderModule.create({ id: 'UserModule' });
-const CarPartsModuleBp = ProviderModule.create({ id: 'CarPartsModule' });
-```
-
-If you are exporting a `blueprint` from a designated file, then you should name that file as following:
-
-```
-database.module.bp.ts
-user.module.bp.ts
-car-parts.module.bp.ts
-```
-
-#### ProviderToken
-
-All variables holding an _object_ representing a [ProviderToken](https://adimarianmutu.github.io/x-injection/types/ProviderToken.html) should be written in [SCREAMING_SNAKE_CASE](https://en.wikipedia.org/wiki/Snake_case) and _suffixed_ with `_PROVIDER`, like this:
-
-```ts
-const USER_SERVICE_PROVIDER = UserService;
-```
-
-If you are exporting a `provider token` from a designated file, then you should name that file as following:
-
-```
-user-service.provider.ts
-```
+[Full API Documentation →](https://adimarianmutu.github.io/x-injection/classes/IProviderModule.html)
 
 ### AppModule
 
-As explained above, it is the `root` module of your application, it is always available and eagerly bootstrapped.
-
-Usually you'll not interact much with it as any `module` which is defined as _global_ will be automatically imported into it, therefore having its `exports` definition available across all your modules _out-of-the-box_. However, you can use it like any `ProviderModule` instance.
-
-> [!WARNING]
->
-> Importing the `AppModule` into any `module` will throw an error!
-
-You have 2 options to access it:
+The global root module, automatically available in every application. Global modules are auto-imported into `AppModule`.
 
 ```ts
 import { AppModule } from '@adimm/x-injection';
+
+// Add global providers
+AppModule.update.addProvider(LoggerService);
+
+// Access from any module
+const anyModule = ProviderModule.create({ id: 'AnyModule' });
+const logger = anyModule.get(LoggerService);
 ```
 
-or
+### Blueprints
+
+Blueprints allow you to define module configurations without instantiating them, enabling lazy loading and template reuse.
 
 ```ts
-import { ProviderModule } from '@adimm/x-injection';
+// Define blueprint
+const DatabaseModuleBp = ProviderModule.blueprint({
+  id: 'DatabaseModule',
+  providers: [DatabaseService],
+  exports: [DatabaseService],
+});
 
-ProviderModule.APP_MODULE_REF;
+// Import blueprint (auto-converts to module)
+const AppModule = ProviderModule.create({
+  id: 'AppModule',
+  imports: [DatabaseModuleBp],
+});
 
-// This option is mostly used internally, but you can 100% safely use it as well.
+// Or create module from blueprint later
+const DatabaseModule = ProviderModule.create(DatabaseModuleBp);
 ```
 
-Providing global services to the `AppModule`:
+**Benefits:**
+
+- Deferred instantiation for better startup performance
+- Reusable module templates across your application
+- Scoped singletons per importing module
+
+### Provider Tokens
+
+xInjection supports four types of provider tokens:
+
+**1. Class Token** (simplest):
 
 ```ts
 @Injectable()
-class UserService {}
+class ApiService {}
 
-AppModule.update.addProvider(UserService);
+providers: [ApiService];
 ```
 
-> [!NOTE]
->
-> All `providers` scope is set to [Singleton](https://adimarianmutu.github.io/x-injection/enums/InjectionScope.html#singleton) by default if not provided.
-
-Yes, that's it, now you have access to the `UserService` anywhere in your app across your `modules`, meaning that you can now do:
+**2. Class Token with Substitution**:
 
 ```ts
-const UnrelatedModule = ProviderModule.create({ id: 'UnrelatedModule' });
-
-const userService = UnrelatedModule.get(UserService);
-// returns the `userService` singleton instance.
+providers: [{ provide: ApiService, useClass: MockApiService }];
 ```
 
-## ProviderModule API
-
-You can see all the available `properties` and `methods` of the `ProviderModule` [here](https://adimarianmutu.github.io/x-injection/classes/IProviderModule.html).
-
-## Injection Scope
-
-There are mainly 3 first-class ways to set the [InjectionScope](https://adimarianmutu.github.io/x-injection/enums/InjectionScope.html) of a `provider`, and each one has an order priority.
-The below list shows them in order of priority _(highest to lowest)_, meaning that if 2 _(or more)_ ways are used, the method with the highest priority will take precedence.
-
-1. By providing the [scope](https://adimarianmutu.github.io/x-injection/interfaces/ProviderScopeOption.html) property to the [ProviderToken](https://adimarianmutu.github.io/x-injection/types/ProviderToken.html):
-   ```ts
-   const USER_PROVIDER: ProviderToken<UserService> = {
-     scope: InjectionScope.Request,
-     provide: UserService,
-     useClass: UserService,
-   };
-   ```
-2. Within the [@Injectable](https://adimarianmutu.github.io/x-injection/functions/Injectable.html) decorator:
-   ```ts
-   @Injectable(InjectionScope.Transient)
-   class Transaction {}
-   ```
-3. By providing the [defaultScope](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#defaultscope) property when initializing a `ProviderModule`:
-   ```ts
-   const RainModuleDef = new ProviderModuleDef({
-     id: 'RainModule',
-     defaultScope: InjectionScope.Transient,
-   });
-   ```
-
-> [!NOTE]
->
-> _Imported modules/providers retain their original `InjectionScope`!_
-
-### Singleton
-
-The [Singleton](https://adimarianmutu.github.io/x-injection/enums/InjectionScope.html#singleton) injection scope means that once a dependency has been resolved from within a module will be cached and further resolutions will use the value from the cache.
-
-Example:
+**3. Value Token** (constants):
 
 ```ts
-expect(MyModule.get(MyProvider)).toBe(MyModule.get(MyProvider));
-// true
+providers: [{ provide: 'API_KEY', useValue: 'secret-key-123' }];
+```
+
+**4. Factory Token** (dynamic):
+
+```ts
+providers: [
+  {
+    provide: 'DATABASE_CONNECTION',
+    useFactory: (config: ConfigService) => createConnection(config.dbUrl),
+    inject: [ConfigService],
+  },
+];
+```
+
+## Injection Scopes
+
+Control provider lifecycle with three scope types (priority order: token > decorator > module default):
+
+### Singleton (Default)
+
+Cached after first resolution - same instance every time:
+
+```ts
+@Injectable() // Singleton by default
+class DatabaseService {}
+
+Module.get(DatabaseService) === Module.get(DatabaseService); // true
 ```
 
 ### Transient
 
-The [Transient](https://adimarianmutu.github.io/x-injection/enums/InjectionScope.html#transient) injection scope means that a _new_ instance of the dependency will be used whenever a resolution occurs.
-
-Example:
+New instance on every resolution:
 
 ```ts
-expect(MyModule.get(MyProvider)).toBe(MyModule.get(MyProvider));
-// false
+@Injectable(InjectionScope.Transient)
+class RequestLogger {}
+
+Module.get(RequestLogger) === Module.get(RequestLogger); // false
 ```
 
 ### Request
 
-The [Request](https://adimarianmutu.github.io/x-injection/enums/InjectionScope.html#request) injection scope means that the _same_ instance will be used when a resolution happens in the _same_ request scope.
-
-Example:
+Single instance per resolution tree (useful for request-scoped data):
 
 ```ts
-@Injectable(InjectionScope.Transient)
-class Book {
-  author: string;
-}
-
 @Injectable(InjectionScope.Request)
-class Metro2033 extends Book {
-  override author = 'Dmitry Alekseyevich Glukhovsky';
-}
+class RequestContext {}
 
 @Injectable(InjectionScope.Transient)
-class Library {
+class Controller {
   constructor(
-    public readonly metro2033: Metro2033,
-    public readonly metro2033_reference: Metro2033
+    public ctx1: RequestContext,
+    public ctx2: RequestContext
   ) {}
 }
 
-const winstonLibrary = MyModule.get(Library);
-const londonLibrary = MyModule.get(Library);
+const controller = Module.get(Controller);
+controller.ctx1 === controller.ctx2; // true (same resolution)
 
-expect(winstonLibrary.metro2033).toBe(winstonLibrary.metro2033_reference);
-expect(londonLibrary.metro2033).toBe(londonLibrary.metro2033_reference);
-// true
-
-expect(winstonLibrary.metro2033).toBe(londonLibrary.metro2033);
-// false
+const controller2 = Module.get(Controller);
+controller.ctx1 === controller2.ctx1; // false (different resolution)
 ```
 
-## Provider Tokens
-
-A [ProviderToken](https://adimarianmutu.github.io/x-injection/types/ProviderToken.html) is another core block of `xInjection` _(and also many other IoC/DI libs)_ which is used to define a `token` which can then be used to resolve a `provider`.
-
-`xInjection` offers _4_ types of tokens:
-
-- [ProviderIdentifier](https://adimarianmutu.github.io/x-injection/types/ProviderIdentifier.html)
-  - It allows you to bind a `value` to a specific _transparent_ token, like a `Class`, `Function`, `symbol` or `string`:
-  ```ts
-  const API_SERVICE_PROVIDER = ApiService;
-  // or
-  const CONSTANT_SECRET_PROVIDER = 'Shh';
-  ```
-- [ProviderClassToken](https://adimarianmutu.github.io/x-injection/types/ProviderClassToken.html)
-
-  - It can be used define the token _and_ the provider:
-
-  ```ts
-  const HUMAN_SERVICE_PROVIDER = { provide: HumanService, useClass: FemaleService };
-
-  // This will bind `HumanService` as the `token` and will resolve `FemaleService` from the container.
-  ```
-
-- [ProviderValueToken](https://adimarianmutu.github.io/x-injection/types/ProviderValueToken.html)
-
-  - It can be used to easily bind _constant_ values, it can be anything, but once resolved it'll be cached and re-used upon further resolutions
-
-  ```ts
-  const THEY_DONT_KNOW_PROVIDER = { provide: CONSTANT_SECRET_PROVIDER, useValue: `They'll never know` };
-  const THEY_MAY_KNOW_PROVIDER = { provide: CONSTANT_SECRET_PROVIDER, useValue: 'Maybe they know?' };
-
-  // As you can see we now have 2 different ProviderTokens which use the same `provide` key.
-  // This means that resolving the `CONSTANT_SECRET_PROVIDER` will return an array of strings.
-  ```
-
-- [ProviderFactoryToken](https://adimarianmutu.github.io/x-injection/types/ProviderFactoryToken.html)
-
-  - It can be used to bind a `factory` which is intended for more complex scenarios:
-
-  ```ts
-  const MAKE_PIZZA_PROVIDER = {
-    provide: 'MAKE_PIZZA',
-    useFactory: async (apiService: ApiService, pizzaService: PizzaService) => {
-      const typeOfPizza = await apiService.getTypeOfPizza();
-
-      if (typeOfPizza === 'margherita') return pizzaService.make.margherita;
-      if (typeOfPizza === 'quattro_stagioni') return pizzaService.make.quattroStagioni;
-      // and so on
-    },
-    // optional
-    inject: [API_SERVICE_PROVIDER, PizzaService],
-  };
-  ```
-
-These are all the available `ProviderToken` you can use.
-
-> [!NOTE]
->
-> In `NestJS` and `Angular` you can't use a `ProviderToken` to _get_ a value, `xInjection` allows this pattern, but you must understand that what it actually does, is to use the _value_ from the `provide` property.
-
-## Provider Modules
-
-As you already saw till here, everything relies around the `ProviderModule` class, so let's dive a little more deep into understanding it.
-
-The most straight forward way to _create/instantiate_ a new `module` is:
+**Setting Scopes:**
 
 ```ts
-const MyModule = ProviderModule.create({
+// 1. In provider token (highest priority)
+providers: [{ provide: Service, useClass: Service, scope: InjectionScope.Transient }];
+
+// 2. In @Injectable decorator
+@Injectable(InjectionScope.Request)
+class Service {}
+
+// 3. Module default (lowest priority)
+ProviderModule.create({
   id: 'MyModule',
-  imports: [AnotherModule, SecondModule, ThirdModule],
-  providers: [
-    { provide: CONSTANT_SECRET_PROVIDER, useValue: 'ultra secret' },
-    PizzaService,
-    { provide: HumanService, useClass: FemaleService },
-  ],
-  exports: [SecondModule, ThirdModule, PizzaService],
+  defaultScope: InjectionScope.Transient,
 });
 ```
 
-From what we can see, the `MyModule` is importing into it 3 more modules, each of them may export one or more _(maybe nothing, that's valid too)_ providers, or even other `modules`.
-Because we imported them into the `MyModule`, now we have access to any providers they may have chosen to export, and the same is true also for _their exported_ modules.
+## Module System
 
-Then, we've chosen to _re-export_ from the `MyModule` the `SecondModule` and `ThirdModule`, meaning that if a different `module` imports `MyModule`, it'll automatically get access to those 2 modules as well. And in the end we also exported our own `PizzaService`, while the remaining other 2 providers, `CONSTANT_SECRET_PROVIDER` and `HumanService` can't be accessed when importing `MyModule`.
+### Import/Export Pattern
 
-This is the _core_ feature of `xInjection` _(and `Angular`/`NestJS` DI system)_, being able to encapsulate the providers, so nothing can spill out without our explicit consent.
-
----
-
-We could also achieve the above by using the `ProviderModule` API like this:
+Modules explicitly control dependency boundaries through imports and exports:
 
 ```ts
-MyModule.update.addImport(AnotherModule);
-MyModule.update.addImport(SecondModule, true); // `true` means "also add to the `exports` definition"
-MyModule.update.addImport(ThirdModule, true);
+const DatabaseModule = ProviderModule.create({
+  id: 'DatabaseModule',
+  providers: [DatabaseService, InternalCacheService],
+  exports: [DatabaseService], // Only DatabaseService is accessible
+});
 
-MyModule.update.addProvider({ provide: CONSTANT_SECRET_PROVIDER, useValue: 'ultra secret' });
-MyModule.update.addProvider(PizzaService, true);
-MyModule.update.addProvider({ provide: HumanService, useClass: FemaleService });
+const ApiModule = ProviderModule.create({
+  id: 'ApiModule',
+  imports: [DatabaseModule], // Gets access to DatabaseService
+  providers: [ApiService],
+});
+
+// ✅ Works
+const dbService = ApiModule.get(DatabaseService);
+
+// ❌ Error - InternalCacheService not exported
+const cache = ApiModule.get(InternalCacheService);
 ```
 
-Now you may probably ask yourself `If we import with the 'addImport' method a new module into an already imported module, will we have access to the providers of that newly imported module?`
+### Re-exporting Modules
 
-The ansuwer is `yes`, we do have access thanks to the _dynamic_ nature of the `ProviderModule` class. Meaning that doing the following will work as expected:
+Modules can re-export imported modules to create aggregation modules:
 
 ```ts
-const InnerModule = ProviderModule.create({
-  id: 'InnerModule',
-  providers: [FirstService],
-  exports: [FirstService],
+const CoreModule = ProviderModule.create({
+  id: 'CoreModule',
+  imports: [DatabaseModule, ConfigModule],
+  exports: [DatabaseModule, ConfigModule], // Re-export both
 });
 
-const OuterModule = ProviderModule.create({
-  id: 'OuterModule',
-  imports: [InnerModule],
+// Consumers get both DatabaseModule and ConfigModule
+const AppModule = ProviderModule.create({
+  imports: [CoreModule],
 });
-
-const UnknownModule = ProviderModule.create({
-  id: 'UnknownModule',
-  providers: [SecondService],
-  exports: [SecondService],
-});
-
-InnerModule.update.addImport(UnknownModule, true); // Don't forget to provide `true` to the `addToExports` optional parameter!
-
-const secondService = OuterModule.get(SecondService);
 ```
 
-The `OuterModule` has now access to the `UnknownModule` exports because it has been _dynamically_ imported _(later at run-time)_ into the `InnerModule` _(which has been imported into `OuterModule` during the `bootstrap` phase)_
+### Dynamic Module Updates
 
-Basically what happens is that when a `module` is imported, it takes care of _notify_ the `host` module if its _definiton_ changed.
+Modules support runtime modifications (use sparingly for performance):
+
+```ts
+const module = ProviderModule.create({ id: 'DynamicModule' });
+
+// Add providers dynamically
+module.update.addProvider(NewService);
+module.update.addProvider(AnotherService, true); // true = also export
+
+// Add imports dynamically
+module.update.addImport(DatabaseModule, true); // true = also export
+```
+
+**Important:** Dynamic imports propagate automatically - if `ModuleA` imports `ModuleB`, and `ModuleB` dynamically imports `ModuleC` (with export), `ModuleA` automatically gets access to `ModuleC`'s exports.
+
+### Global Modules
+
+Mark modules as global to auto-import into `AppModule`:
+
+```ts
+const LoggerModule = ProviderModule.create({
+  id: 'LoggerModule',
+  isGlobal: true,
+  providers: [LoggerService],
+  exports: [LoggerService],
+});
+
+// LoggerService now available in all modules without explicit import
+```
+
+## Advanced Features
 
 > [!WARNING]
->
-> This is a very powerful feature which comes in with some costs, _most of the time negligible_, but if you have an app which has thousand and thousand of `modules` doing this type of _dynamic_ behavior, you may incur in some performance issues which will require proper design to keep under control.
->
-> _Most of the times the best solution is to leverage the nature of `blueprints`._
-
----
-
-Sometimes you may actually want to _lazy_ import a `module` from a _file_, this can be done very easily with `xInjection`:
-
-```ts
-(async () => {
-  await MyModule.update.addImportLazy(async () => (await import('./lazy.module')).LazyModule);
-
-  MyModule.isImportingModule('LazyModule');
-  // => true
-})();
-```
-
-> [!TIP]
->
-> This design pattern is _extremely_ powerful and useful when you may have a lot of `modules` initializing during the app bootstrap process as you can defer their initialization, or even never load them if the user never needs those specific `modules` _(this is mostly applicable on the client-side rather than the server-side)_
-
-Keep reading to understand how you can defer initialization of the `modules` by using `blueprints`.
-
-## Blueprints
-
-The [ProviderModuleBlueprint](https://adimarianmutu.github.io/x-injection/classes/ProviderModuleBlueprint.html) `class` main purpose is to encapsulate the `definitions` of a `Module`, when you do `ProviderModule.blueprint({...})` you are _not_ actually creating an instance of the `ProviderModule` class, but an instance of the `ProviderModuleBlueprint` class.
-
-> To better understand the above concept; imagine the `blueprint` as being a _dormant_ _(static)_ `module` which is not fully awake _(dynamic)_ till it is actually _imported_ into a `module`.
-
-### Import Behavior
-
-Whenever you _import_ a `blueprint` into a `module`, it'll automatically be "transformed" to a `ProviderModule` instance by the engine, this step is crucial as a `blueprint` per se does not contain a _container_, just its _definitions_.
-
-> [!NOTE]
->
-> Therefore it is important to understand the _injection_ `scope` of an imported `blueprint`; we previously learned that when we import a `blueprint` into a `module` it automatically creates an instance of the `ProviderModule` from it, this means that all the `singleton` providers of the `blueprint` definition are now _scoped singleton_, where _scoped_ means _singleton in relation to their imported module_.
-
-### isGlobal
-
-When you initialize a `blueprint` with the [isGlobal](https://adimarianmutu.github.io/x-injection/interfaces/ProviderModuleOptions.html#isglobal) property set to `true`, the out-of-the-box behavior is to _automatically_ import the `blueprint` into the `AppModule`. You can disable this behavior by setting the [autoImportIntoAppModuleWhenGlobal](https://adimarianmutu.github.io/x-injectioninterfaces/ModuleBlueprintOptions.html#autoimportintoappmodulewhenglobal) property to `false`
-
-```ts
-const GlobalModuleBp = ProviderModule.blueprint({..., isGlobal: true }, { autoImportIntoAppModuleWhenGlobal: false });
-```
-
-Now you can decide when to import it into the `AppModule` by doing `AppModule.addImport(GlobalModuleBp)`.
-
----
-
-I highly recommend to take advantage of the `blueprints` nature in order to plan-ahead your `modules`;
-
-Why?
-
-- To _define module configurations upfront_ without incurring the cost of immediate initialization _(even if negligible)_.
-- To reuse module _definitions across_ different parts of your application while maintaining isolated instances. _(when possible/applicable)_
-- To _compose modules flexibly_, allowing you to adjust module dependencies dynamically before instantiation.
-
-### Definitions
-
-After you have provided the _initial_ `definitons` of a `blueprint`, you can always modify them with the [updateDefinition](https://adimarianmutu.github.io/x-injection/classes/ProviderModuleBlueprint.html#updatedefinition) `method`.
-
-> [!NOTE]
->
-> Updating the `definitions` of a `blueprint` after has been _imported_ into a `module` will **_not_** propagate those changes to the `module` where it has been imported.
-
----
-
-This means that we can actually _leverage_ the `blueprints` nature to _defer_ the actual initialization of a `module` by doing so:
-
-```ts
-const UserModuleBp = ProviderModule.blueprint({
-  id: 'UserModule',
-  ...
-});
-
-// Later in your code
-
-const UserModule = ProviderModule.create(UserModuleBp);
-```
-
-The `UserModule` will be created only when _necessary_ and it'll use the same exact definitons which are available into the `UserModuleBp` at the time of the `create` invokation.
-
-## Advanced Usage
-
-> [!WARNING]
->
-> This section covers advanced features which may add additional complexity _(or even bugs)_ to your application if you misuse them, use these features only if truly needed and after evaluating the _pros_ and _cons_ of each.
+> These features provide deep customization but can add complexity. Use them only when necessary.
 
 ### Events
 
-Each `module` will emit specific events through its life-cycle and you can intercept them by using the `Module.update.subscribe` method.
-
-> [!TIP]
->
-> [Here](https://adimarianmutu.github.io/x-injection/enums/DefinitionEventType.html) you can see all the available `events`
-
-If you'd need to intercept a `get` request, you can achieve that by doing:
+Subscribe to module lifecycle events for monitoring and debugging:
 
 ```ts
-const CarModule = ProviderModule.create({
-  id: 'CarModule',
-  providers: [CarService],
+import { DefinitionEventType } from '@adimm/x-injection';
+
+const module = ProviderModule.create({
+  id: 'MyModule',
+  providers: [MyService],
 });
 
-CarModule.update.subscribe(({ type, change }) => {
-  // We are interested only in the `GetProvider` event.
-  if (type !== DefinitionEventType.GetProvider) return;
-
-  // As our `CarModule` has only one provider, it is safe to assume
-  // that the `change` will always be the `CarService` instance.
-  const carService = change as CarService;
-
-  console.log('CarService: ', carService);
+const unsubscribe = module.update.subscribe(({ type, change }) => {
+  if (type === DefinitionEventType.GetProvider) {
+    console.log('Provider resolved:', change);
+  }
+  if (type === DefinitionEventType.Import) {
+    console.log('Module imported:', change);
+  }
 });
 
-const carService = CarModule.get(CarService);
-// logs => CarService: <instance_of_car_service_here>
-```
-
-> [!WARNING]
->
-> After subscribing to a `ProviderModule` signal emission, you should make sure to also `unsubscribe` if you don't need anymore to intercept the changes, not doing
-> so may cause memory leaks if you have lots of `subscriptions` which do heavy computations!
-
-The `subscribe` method will _always_ return a `method` having the signature `() => void`, when you invoke it, it'll close the pipe which intercepts the signal emitted by the `module`:
-
-```ts
-const unsubscribe = CarModule.update.subscribe(({ type, change }) => {
-  /* heavy computation here */
-});
-
-// later in your code
-
+// Clean up when done
 unsubscribe();
 ```
 
-> [!NOTE]
->
-> Events are _always_ invoked _after_ middlewares
+**Available Events:** `GetProvider`, `Import`, `Export`, `AddProvider`, `RemoveProvider`, `ExportModule` - [Full list →](https://adimarianmutu.github.io/x-injection/enums/DefinitionEventType.html)
+
+> [!WARNING]
+> Always unsubscribe to prevent memory leaks. Events fire **after** middlewares.
 
 ### Middlewares
 
-Using middlewares is not encouraged as it allows you to tap into very deep low-level code which can cause unexpected bugs if not implemented carefully, however, `middlewares` are the perfect choice if you want to extend/alter the standard behavior of `module` as it allows you to decide what should happen with a resolved value _before_ it is returned to the `consumer`.
-
-> [!TIP]
->
-> [Here](https://adimarianmutu.github.io/x-injection/enums/MiddlewareType.html) you can see all the available `middlewares`
-
-Let's say that you want to wrap all the returned values of a specific `module` within an object having this signature `{ timestamp: number; value: any }`. By using the `GetProvider` event will not do the trick because it _doesn't_ allow you to alter/change the actual returned value to the `consumer`, you can indeed alter the _content_ via reference, but not the _actual_ result.
-
-So the easiest way to achieve that is by using the `BeforeGet` middleware as shown below:
+Intercept and transform provider resolution before values are returned:
 
 ```ts
-const TransactionModule = ProviderModule.create(TransactionModuleBp);
+import { MiddlewareType } from '@adimm/x-injection';
 
-TransactionModule.middlewares.add(MiddlewareType.BeforeGet, (provider, providerToken, inject) => {
-  // We are interested only in the `providers` instances which are from the `Payment` class
-  if (!(provider instanceof Payment)) return true;
-  // or
-  if (providerToken !== 'LAST_TRANSACTION') return true;
+const module = ProviderModule.create({
+  id: 'MyModule',
+  providers: [PaymentService],
+});
 
-  // DON'T do this as you'll encounter an infinite loop
-  const transactionService = TransactionModule.get(TransactionService);
-  // If you have to inject into the middleware `context` from the `module`
-  // use the `inject` parameter
-  const transactionService = inject(TransactionService);
+// Transform resolved values
+module.middlewares.add(MiddlewareType.BeforeGet, (provider, token, inject) => {
+  // Pass through if not interested
+  if (!(provider instanceof PaymentService)) return true;
 
+  // Use inject() to avoid infinite loops
+  const logger = inject(LoggerService);
+  logger.log('Payment service accessed');
+
+  // Transform the value
   return {
-    timestamp: transactionService.getTimestamp(),
+    timestamp: Date.now(),
     value: provider,
   };
 });
 
-const transaction = TransactionModule.get('LAST_TRANSACTION');
-// transaction => { timestamp: 1363952948, value: <Payment_instance> }
+const payment = module.get(PaymentService);
+// { timestamp: 1234567890, value: PaymentService }
 ```
 
-One more example is to add a `middleware` in order to _dynamically_ control which `modules` can import a specific `module` by using the [OnExportAccess](https://adimarianmutu.github.io/x-injection/enums/MiddlewareType.html#onexportaccess) flag.
+**Control export access:**
 
 ```ts
-const UnauthorizedBranchBankModule = ProviderModule.create({ id: 'UnauthorizedBranchBankModule' });
-const SensitiveBankDataModule = ProviderModule.create({
-  id: 'SensitiveBankDataModule',
-  providers: [SensitiveBankDataService, NonSensitiveBankDataService],
-  exports: [SensitiveBankDataService, NonSensitiveBankDataService],
-});
-
-SensitiveBankDataModule.middlewares.add(MiddlewareType.OnExportAccess, (importerModule, currentExport) => {
-  // We want to deny access to our `SensitiveBankDataService` from the `exports` definition if the importer module is `UnauthorizedBranchBankModule`
-  if (importerModule.toString() === 'UnauthorizedBranchBankModule' && currentExport === SensitiveBankDataService)
-    return false;
-
-  // Remaining module are able to import all our `export` definition
-  // The `UnauthorizedBranchBankModule` is unable to import the `SensitiveBankDataService`
-  return true;
+module.middlewares.add(MiddlewareType.OnExportAccess, (importerModule, exportToken) => {
+  // Restrict access based on importer
+  if (importerModule.id === 'UntrustedModule' && exportToken === SensitiveService) {
+    return false; // Deny access
+  }
+  return true; // Allow
 });
 ```
+
+**Available Middlewares:** `BeforeGet`, `BeforeAddProvider`, `BeforeAddImport`, `OnExportAccess` - [Full list →](https://adimarianmutu.github.io/x-injection/enums/MiddlewareType.html)
 
 > [!CAUTION]
 >
-> Returning `false` in a `middleware` will abort the chain, meaning that for the above example, no value would be returned.
-> If you have to explicitly return a `false` boolean value, you may have to wrap your provider value as an workaround. _(`null` is accepted as a return value)_
->
-> Meanwhile returning `true` means _"return the value without changing it"_.
->
-> In the future this behavior may change, so if your business logic relies a lot on `middlewares` make sure to stay up-to-date with the latest changes.
+> - Returning `false` aborts the chain (no value returned)
+> - Returning `true` passes value unchanged
+> - Middlewares execute in registration order
+> - Always handle errors in middleware chains
 
-It is also worth mentioning that you can apply _multiple_ middlewares by just invoking the `middlewares.add` method multiple times, they are executed in the same exact order as you applied them, meaning that the first invokation to `middlewares.add` will actually be the `root` of the chain.
+## Testing
 
-If no error is thrown down the chain, all the registered middleware `callback` will be supplied with the necessary values.
-
-> [!WARNING]
->
-> It is the _developer_ responsability to catch any error down the `chain`!
-
-### Internals
-
-If you are not interested in understanding how `xInjection` works under the hood, you can skip this section 😌
-
-#### ProviderModule
-
-It is the head of everything, a `ProviderModule` is actually composed by several classes, each with its own purpose.
-
-> [!TIP]
->
-> You can get access to _all_ the internal instances by doing `new ProviderModule({...})` instead of `ProviderModule.create({...})`
-
-#### MiddlewaresManager
-
-It is the `class` which takes care of managing the registered `middlewares`, check it out [here](https://adimarianmutu.github.io/x-injection/classes/MiddlewaresManager.html).
-
-Not much to say about it as its main role is to _register_ and _build_ the `middleware` chain.
-
-#### ModuleContainer
-
-It is the `class` which takes care of managing the `inversify` container, check it out [here](https://adimarianmutu.github.io/x-injection/classes/ModuleContainer.html).
-
-Its main purpose is to initialize the module raw _([InversifyJS Container](https://inversify.io/docs/api/container/))_ `class` and to _bind_ the providers to it.
-
-#### ImportedModuleContainer
-
-It is the `class` which takes care of managing the _imported_ modules, check it out [here](https://adimarianmutu.github.io/x-injection/classes/ImportedModuleContainer.html).
-
-Because `modules` can be imported into other modules, therefore creating a _complex_ `graph` of modules, the purpose of this class is to keep track and sync the changes of the `exports` definition of the _imported_ module.
-
-The `ProviderModule` API is simple yet very powerful, you may not realize that doing `addImport` will cause _(based on how deep is the imported module)_ a chain reaction which the `ImportedModuleContainer` must keep track of in order to make sure that the _consumer_ `module` which imported the _consumed_ `module` has access only to the `providers`/`modules` explicitly exported by the _consumed_ `module`.
-
-Therefore it is encouraged to keep things mostly static, as each `addProvider`, `addImport`, `removeImport` and so on have a penality cost on your application performance. This cost in most cases is negligible, however it highly depends on how the _developer_ uses the feature `xInjection` offers.
-
-> "With great power comes great responsibility."
-
-#### DynamicModuleDefinition
-
-It is the `class` which takes care of managing the _updates_ and _event_ emissions of the `module`, check it out [here](https://adimarianmutu.github.io/x-injection/classes/DynamicModuleDefinition.html).
-
-This class is actually the "parent" of the `ImportedModuleContainer` instances, its purpose is to _build_ the _initial_ definition graph, and while doing so it also instantiate _for each_ imported module a new `ImportedModuleContainer`.
-
-It also take care of managing the `events` bubbling by checking cirular references and so on.
-
-#### ProviderModuleBlueprint
-
-It's the "metadata" counterpart of the `ProviderModule` class, as its only purpose is to carry the definitions. Check it out [here](https://adimarianmutu.github.io/x-injection/classes/ProviderModuleBlueprint.html).
-
-#### Set of Helpers
-
-The library does also export a set of useful helpers in the case you may need it:
+Create mock modules easily using blueprint cloning:
 
 ```ts
-import { ProviderModuleHelpers, ProviderTokenHelpers } from '@adimm/x-injection';
-```
-
----
-
-This covers pretty much everything about how `xInjection` is built and how it works.
-
-## Unit Tests
-
-It is very easy to create mock modules so you can use them in your unit tests.
-
-```ts
-class ApiService {
-  constructor(private readonly userService: UserService) {}
-
-  async sendRequest<T>(location: LocationParams): Promise<T> {
-    // Pseudo Implementation
-    return this.sendToLocation(user, location);
-  }
-
-  private async sendToLocation(user: User, location: any): Promise<any> {}
-}
-
-const ApiModuleBp = new ProviderModule.blueprint({
+// Production module
+const ApiModuleBp = ProviderModule.blueprint({
   id: 'ApiModule',
   providers: [UserService, ApiService],
+  exports: [ApiService],
 });
 
-// Clone returns a `deep` clone and wraps all the `methods` to break their reference!
-const ApiModuleBpMocked = ApiModuleBp.clone().updateDefinition({
-  id: 'ApiModuleMocked',
+// Test module - clone and override
+const ApiModuleMock = ApiModuleBp.clone().updateDefinition({
+  id: 'ApiModuleMock',
   providers: [
-    {
-      provide: UserService,
-      useClass: UserService_Mock,
-    },
+    { provide: UserService, useClass: MockUserService },
     {
       provide: ApiService,
       useValue: {
-        sendRequest: async (location) => {
-          console.log(location);
-        },
+        sendRequest: jest.fn().mockResolvedValue({ data: 'test' }),
       },
     },
   ],
 });
+
+// Use in tests
+const testModule = ProviderModule.create({
+  imports: [ApiModuleMock],
+});
 ```
 
-Now what you have to do is just to provide the `ApiModuleBpMocked` instead of the `ApiModuleBp` 😎
+## Resources
 
-## Documentation
+📚 **[Full API Documentation](https://adimarianmutu.github.io/x-injection/index.html)** - Complete TypeDoc reference
 
-Comprehensive, auto-generated documentation is available at:
+⚛️ **[React Integration](https://github.com/AdiMarianMutu/x-injection-reactjs)** - Official React hooks and providers
 
-👉 [https://adimarianmutu.github.io/x-injection/index.html](https://adimarianmutu.github.io/x-injection/index.html)
-
-## ReactJS Implementation
-
-You want to use it within a [ReactJS](https://react.dev/) project? Don't worry, the library does already have an official implementation for React ⚛️
-
-For more details check out the [GitHub Repository](https://github.com/AdiMarianMutu/x-injection-reactjs).
+💡 **[GitHub Issues](https://github.com/AdiMarianMutu/x-injection/issues)** - Bug reports and feature requests
 
 ## Contributing
 
-Pull requests are warmly welcomed! 😃
-
-Please ensure your contributions adhere to the project's code style. See the repository for more details.
+Contributions welcome! Please ensure code follows the project style guidelines.
 
 ## Credits
 
-- [Adi-Marian Mutu](https://www.linkedin.com/in/mutu-adi-marian/) - Author of `xInjection`
-- [InversifyJS](https://github.com/inversify/monorepo) - Base lib
-- [Alexandru Turica](https://www.linkedin.com/in/alexandru-turica-82215522b/) - Official Logo
+**Author:** [Adi-Marian Mutu](https://www.linkedin.com/in/mutu-adi-marian/)
+**Built on:** [InversifyJS](https://github.com/inversify/monorepo)
+**Logo:** [Alexandru Turica](https://www.linkedin.com/in/alexandru-turica-82215522b/)
 
----
+## License
 
-> [!NOTE]
->
-> **For questions, feature requests, or bug reports, feel free to open an [issue](https://github.com/AdiMarianMutu/x-injection/issues) on GitHub.**
+MIT © Adi-Marian Mutu

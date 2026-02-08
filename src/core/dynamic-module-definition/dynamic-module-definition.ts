@@ -91,12 +91,6 @@ export class DynamicModuleDefinition implements IDynamicModuleDefinition {
     });
   }
 
-  async addImportLazy(lazyCb: AsyncMethod<ProviderModule>, addToExports?: boolean): Promise<void> {
-    const providerModule = await lazyCb();
-
-    this.addImport(providerModule, addToExports);
-  }
-
   addProvider<T>(provider: DependencyProvider<T>, addToExports = false): void {
     const middlewareResult = this.providerModule.middlewaresManager.applyMiddlewares<DependencyProvider<T> | false>(
       MiddlewareType.BeforeAddProvider,
@@ -128,12 +122,6 @@ export class DynamicModuleDefinition implements IDynamicModuleDefinition {
       type: DefinitionEventType.ExportProvider,
       change: provider,
     });
-  }
-
-  async addProviderLazy<T>(lazyCb: AsyncMethod<DependencyProvider<T>>, addToExports?: boolean): Promise<void> {
-    const provider = await lazyCb();
-
-    this.addProvider(provider, addToExports);
   }
 
   removeImport(moduleOrId: IProviderModule | ModuleIdentifier): boolean {

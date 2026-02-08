@@ -23,20 +23,6 @@ export interface IDynamicModuleDefinition {
   addImport(moduleOrBlueprint: ModuleOrBlueprint, addToExports?: boolean): void;
 
   /**
-   * Can be used to _lazily_ `import` a new {@link module} into the current {@link IProviderModule | Module}.
-   *
-   * **Note:** _This is useful when you want to lazy import a module from within another file._
-   *
-   * ```ts
-   * addImportLazy(async () => import('./lazy.module'));
-   * ```
-   *
-   * @param lazyCb An `async` callback which will resolve the {@link IProviderModule | Module} to be imported.
-   * @param addToExports When set to `true` it'll also `export` the {@link module}. _(defaults to `false`)_
-   */
-  addImportLazy(lazyCb: AsyncMethod<IProviderModule>, addToExports?: boolean): Promise<void>;
-
-  /**
    * Can be used to `bind` a new {@link provider} to the {@link IProviderModule | Module}'s `container`.
    *
    * @param provider The {@link DependencyProvider | Provider} to add.
@@ -45,24 +31,10 @@ export interface IDynamicModuleDefinition {
   addProvider<T>(provider: DependencyProvider<T>, addToExports?: boolean): void;
 
   /**
-   * Can be used to _lazily_ `bind` a new {@link provider} to the {@link IProviderModule | Module}'s `container`.
-   *
-   * **Note:** _This is useful when you want to lazy import a provider from within another file._
-   *
-   * ```ts
-   * addImportLazy(async () => import('./lazy.provider'));
-   * ```
-   *
-   * @param lazyCb An `async` callback which will resolve the {@link DependencyProvider | Provider} to add.
-   * @param addToExports When set to `true` it'll also `export` the {@link module}. _(defaults to `false`)_
-   */
-  addProviderLazy<T>(lazyCb: AsyncMethod<DependencyProvider<T>>, addToExports?: boolean): Promise<void>;
-
-  /**
    * Can be used to remove an `import` from the _current_ {@link IProviderModule | Module}.
    * It'll also automatically remove it from the `exports` definition.
    *
-   * **Note:** _You can always add it back with the {@link addImport} or {@link addImportLazy} methods._
+   * **Note:** _You can always add it back with the {@link addImport} method._
    *
    * @param moduleOrId Either the `module` reference itself or its `id`.
    */
@@ -72,7 +44,7 @@ export interface IDynamicModuleDefinition {
    * Can be used to remove a `provider` from the _current_ {@link IProviderModule | Module}'s `container`.
    * It'll also automatically remove it from the `exports` definition.
    *
-   * **Note:** _You can always add it back with the {@link addProvider} or {@link addProviderLazy} methods._
+   * **Note:** _You can always add it back with the {@link addProvider} method._
    *
    * @param providerOrIdentifier Either the `provider` reference itself or its `{ provide }` property value.
    */

@@ -5,8 +5,6 @@ import {
   ProviderValueToken,
 } from '../src';
 import { EmptyService, EmptyService2, EmptyService3, FilledService } from './setup';
-import { LazyModuleService } from './setup/lazy.module';
-import { LAZY_PROVIDER } from './setup/lazy.provider';
 
 describe('Dynamic Definition', () => {
   afterEach(() => jest.clearAllMocks());
@@ -36,13 +34,6 @@ describe('Dynamic Definition', () => {
 
       expect(m0.isImportingModule(m1)).toBe(true);
       expect(m0.isImportingModule(m1.id)).toBe(true);
-    });
-
-    it('should lazily import additional modules', async () => {
-      await m0.update.addImportLazy(async () => (await import('./setup/lazy.module')).LazyModule);
-
-      expect(m0.isImportingModule('LazyModule')).toBe(true);
-      expect(m0.get(LazyModuleService)).toBeInstanceOf(LazyModuleService);
     });
 
     it('should import additional modules and export them', () => {
@@ -80,14 +71,16 @@ describe('Dynamic Definition', () => {
 
     describe('Remove', () => {
       it('should remove imported module by `reference`', async () => {
-        const { LazyModule } = await import('./setup/lazy.module');
+        const { EmptyModuleWithEmptyService } = await import('./setup/modules');
 
-        expect(m0.isImportingModule(LazyModule)).toBe(true);
+        m0.update.addImport(EmptyModuleWithEmptyService);
 
-        m0.update.removeImport(LazyModule);
+        expect(m0.isImportingModule(EmptyModuleWithEmptyService)).toBe(true);
 
-        expect(m0.isImportingModule(LazyModule)).toBe(false);
-        expect(() => m0.get(LazyModuleService)).toThrow(InjectionProviderModuleMissingProviderError);
+        m0.update.removeImport(EmptyModuleWithEmptyService);
+
+        expect(m0.isImportingModule(EmptyModuleWithEmptyService)).toBe(false);
+        expect(() => m0.get(EmptyService)).toThrow(InjectionProviderModuleMissingProviderError);
       });
 
       it('should remove imported module by `id`', async () => {
@@ -116,14 +109,6 @@ describe('Dynamic Definition', () => {
       expect(m0.hasProvider(p0)).toBe(true);
       expect(m0.moduleContainer.container.isCurrentBound(p0.provide)).toBe(true);
       expect(m0.get(p0)).toBe(p0.useValue);
-    });
-
-    it('should lazily add additional providers', async () => {
-      await m0.update.addProviderLazy(async () => (await import('./setup/lazy.provider')).LAZY_PROVIDER);
-
-      expect(m0.hasProvider(LAZY_PROVIDER)).toBe(true);
-      expect(m0.moduleContainer.container.isCurrentBound(LAZY_PROVIDER.provide)).toBe(true);
-      expect(m0.get(LAZY_PROVIDER)).toBe(LAZY_PROVIDER.useValue);
     });
 
     it('should import additional providers and export them', () => {
@@ -161,16 +146,6 @@ describe('Dynamic Definition', () => {
     });
 
     describe('Remove', () => {
-      it('should remove provider by `reference`', () => {
-        m0.update.removeProvider(p0);
-        m0.update.removeProvider(LAZY_PROVIDER);
-
-        expect(m0.hasProvider(p0)).toBe(false);
-        expect(m0.hasProvider(LAZY_PROVIDER)).toBe(false);
-        expect(() => m0.get(p0)).toThrow(InjectionProviderModuleMissingProviderError);
-        expect(() => m0.get(LAZY_PROVIDER)).toThrow(InjectionProviderModuleMissingProviderError);
-      });
-
       it('should remove provider by `provide` key value', () => {
         const p1 = {
           provide: 'p1_to_be_deleted',

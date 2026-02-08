@@ -1,7 +1,13 @@
 import { ProviderModule } from '../../src';
-import { GlobalService } from './services';
+import { EmptyService, GlobalService } from './services';
 
 export const EmptyModule = ProviderModule.create({ id: 'EmptyModule' });
+
+export const EmptyModuleWithEmptyService = ProviderModule.create({
+  id: 'EmptyModuleWithEmptyService',
+  providers: [EmptyService],
+  exports: [EmptyService],
+});
 
 export const GlobalModule = new ProviderModule({
   id: 'GlobalModule',

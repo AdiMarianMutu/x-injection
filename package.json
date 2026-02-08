@@ -1,5 +1,9 @@
 {
   "name": "@adimm/x-injection",
+  "private": false,
+  "repository": {
+    "url": "https://github.com/AdiMarianMutu/x-injection"
+  },
   "description": "Powerful IoC library built on-top of InversifyJS inspired by NestJS's DI.",
   "version": "2.1.2",
   "author": "Adi-Marian Mutu",

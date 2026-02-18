@@ -2360,36 +2360,6 @@ module.get(SomeService)
   InjectionProviderModuleMissingProviderError
 ```
 
-Here is the same lookup chain rendered as a graph:
-
-```mermaid
-flowchart TD
-    A["module.get(SomeService)"] --> B
-
-    subgraph own["① Own container"]
-        B{{"Bound here?"}}
-    end
-
-    B -- Yes --> Z(["✅ Return instance"])
-    B -- No --> C
-
-    subgraph imports["② Imported modules (exported providers only)"]
-        C{{"Exported by<br/>DatabaseModule?"}}
-        C -- No --> D{{"Exported by<br/>ConfigModule?"}}
-    end
-
-    C -- Yes --> Z
-    D -- Yes --> Z
-    D -- No --> E
-
-    subgraph global["③ AppModule (via AppBootstrapModule)"]
-        E{{"Bound in<br/>AppModule?"}}
-    end
-
-    E -- Yes --> Z
-    E -- No --> F(["❌ MissingProviderError"])
-```
-
 **Resolution in practice** — given the modules set up in [Import/Export Pattern](#importexport-pattern) and [Global Modules](#global-modules):
 
 ```ts

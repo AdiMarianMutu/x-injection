@@ -10,7 +10,7 @@ export class InjectionProviderModuleMissingProviderError extends InjectionProvid
   constructor(module: IProviderModule, providerToken: ProviderToken) {
     super(
       module,
-      `The [${ProviderTokenHelpers.providerTokenToString(providerToken)}] provider is not bound to this (or any imported) module container, and was not found either in the 'AppModule'!`
+      `The [${ProviderTokenHelpers.providerTokenToString(providerToken)}] provider not found. It's not in this module, any imported ones, or the root 'AppModule'.`
     );
   }
 }

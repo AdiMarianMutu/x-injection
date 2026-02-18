@@ -533,10 +533,13 @@ const ConfigModuleMock = ConfigModuleBp.clone().updateDefinition({
 - **Deferred Instantiation** - Only create modules when needed
 - **Reusable Templates** - Define once, use in multiple places
 - **Testing** - Clone and modify for test scenarios
-- **Scoped Singletons** - Each importer gets its own module instance
+- **Scoped Singletons** - Each importing module gets its own independent module instance converted from the blueprint
 
 > [!TIP]
 > Use blueprints when you need the same module configuration in multiple places, or when you want to delay module creation until runtime.
+
+> [!IMPORTANT]
+> When a blueprint is imported into multiple modules, each importing module receives its **own separate instance** of that blueprint — converted to a full module independently. This means that providers declared as `Singleton` inside a blueprint are only singletons **relative to the module that imported them**, not globally. If `ModuleA` and `ModuleB` both import `ConfigModuleBp`, they each get their own `ConfigService` singleton — the two instances are completely independent of each other.
 
 ### AppModule
 

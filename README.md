@@ -15,6 +15,8 @@
 
 **A powerful, modular dependency injection library for TypeScript** — Built on [InversifyJS](https://github.com/inversify/InversifyJS), inspired by [NestJS](https://github.com/nestjs/nest)'s elegant module architecture.
 
+> **TL;DR** — Mark classes with `@Injectable()`, group them into `ProviderModule`s with explicit `imports`/`exports`, and call `module.get(MyService)`. Dependencies are wired automatically, scoped correctly, and fully testable without touching production code.
+
 ## Table of Contents
 
 - [Table of Contents](#table-of-contents)
@@ -23,8 +25,6 @@
   - [Problem 2: Tight Coupling and Testing Difficulty](#problem-2-tight-coupling-and-testing-difficulty)
   - [Problem 3: Lack of Encapsulation](#problem-3-lack-of-encapsulation)
   - [Problem 4: Lifecycle Management Complexity](#problem-4-lifecycle-management-complexity)
-- [Overview](#overview)
-- [Features](#features)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Core Concepts](#core-concepts)
@@ -32,10 +32,6 @@
   - [Modules](#modules)
   - [Blueprints](#blueprints)
   - [AppModule](#appmodule)
-- [OOP-Style Modules with ProviderModuleClass](#oop-style-modules-with-providermoduleclass)
-  - [Basic OOP Module](#basic-oop-module)
-  - [Advanced OOP Patterns](#advanced-oop-patterns)
-  - [When to Use OOP vs Functional](#when-to-use-oop-vs-functional)
 - [Provider Tokens](#provider-tokens)
   - [1. Class Token](#1-class-token)
   - [2. Class Token with Substitution](#2-class-token-with-substitution)
@@ -77,10 +73,13 @@
   - [Blueprint Cloning](#blueprint-cloning)
   - [Provider Substitution](#provider-substitution)
   - [Mocking Services](#mocking-services)
+- [OOP-Style Modules with ProviderModuleClass](#oop-style-modules-with-providermoduleclass)
+  - [Basic OOP Module](#basic-oop-module)
+  - [When to Use OOP vs Functional](#when-to-use-oop-vs-functional)
 - [Advanced Module API](#advanced-module-api)
   - [Query Methods](#query-methods)
-  - [Multiple Provider Binding](#multiple-provider-binding)
   - [Batch Resolution with getMany()](#batch-resolution-with-getmany)
+- [Hierarchical Dependency Injection](#hierarchical-dependency-injection)
 - [Resources](#resources)
 - [Contributing](#contributing)
 - [Credits](#credits)
@@ -97,15 +96,15 @@ Modern applications face several dependency management challenges. Let's examine
 ```ts
 // Manually creating and wiring dependencies
 class DatabaseService {
-  constructor(private config: ConfigService) {}
+  constructor(private readonly config: ConfigService) {}
 }
 
 class UserRepository {
-  constructor(private db: DatabaseService) {}
+  constructor(private readonly db: DatabaseService) {}
 }
 
 class AuthService {
-  constructor(private userRepo: UserRepository) {}
+  constructor(private readonly userRepo: UserRepository) {}
 }
 
 // Manual instantiation nightmare
@@ -123,17 +122,17 @@ const authService = new AuthService(userRepo);
 ```ts
 @Injectable()
 class DatabaseService {
-  constructor(private config: ConfigService) {}
+  constructor(private readonly config: ConfigService) {}
 }
 
 @Injectable()
 class UserRepository {
-  constructor(private db: DatabaseService) {}
+  constructor(private readonly db: DatabaseService) {}
 }
 
 @Injectable()
 class AuthService {
-  constructor(private userRepo: UserRepository) {}
+  constructor(private readonly userRepo: UserRepository) {}
 }
 
 const AuthModule = ProviderModule.create({
@@ -169,7 +168,7 @@ class PaymentService {
 ```ts
 @Injectable()
 class PaymentService {
-  constructor(private paymentGateway: PaymentGateway) {}
+  constructor(private readonly paymentGateway: PaymentGateway) {}
 
   async charge(amount: number) {
     return this.paymentGateway.charge(amount);
@@ -185,6 +184,9 @@ const ProductionModule = ProviderModule.create({
 const TestModule = ProviderModule.create({
   providers: [{ provide: PaymentGateway, useClass: MockPaymentGateway }, PaymentService],
 });
+
+const testService = TestModule.get(PaymentService);
+// testService.charge() → logs "Mock charge: $100" instead of hitting Stripe
 ```
 
 ### Problem 3: Lack of Encapsulation
@@ -228,7 +230,7 @@ const ApiModule = ProviderModule.create({
 const queryBuilder = ApiModule.get(QueryBuilder);
 
 // ❌ Error - CacheService not exported (properly encapsulated!)
-const cache = ApiModule.get(CacheService);
+const cache = ApiModule.get(CacheService); // throws InjectionProviderModuleMissingProviderError
 ```
 
 ### Problem 4: Lifecycle Management Complexity
@@ -282,23 +284,11 @@ const AppModule = ProviderModule.create({
   },
 });
 
-// Lifecycle automatically managed
-await AppModule.dispose(); // Everything cleaned up properly
+// Lifecycle automatically managed — onDispose runs db.disconnect() automatically
+await AppModule.dispose(); // ✅ No forgotten cleanup, no resource leaks
 ```
 
-xInjection transforms these pain points into elegant, maintainable code through:
-
-- **Automatic dependency resolution** - No manual wiring
-- **Inversion of Control** - Easy testing and flexibility
-- **Encapsulation** - Fine-grained control over module boundaries
-- **Lifecycle hooks** - Proper initialization and cleanup
-- **Modular architecture** - Scalable application structure
-
-## Overview
-
-**xInjection** is a powerful [Dependency Injection](https://en.wikipedia.org/wiki/Dependency_injection) library built on [InversifyJS](https://github.com/inversify/InversifyJS), inspired by [NestJS](https://github.com/nestjs/nest)'s modular architecture. It provides fine-grained control over dependency encapsulation through a module-based system where each module manages its own container with explicit import/export boundaries.
-
-## Features
+**xInjection** is a [Dependency Injection](https://en.wikipedia.org/wiki/Dependency_injection) library built on [InversifyJS](https://github.com/inversify/InversifyJS), inspired by [NestJS](https://github.com/nestjs/nest)'s modular architecture. It solves the pain points above through:
 
 - **Modular Architecture** - NestJS-style import/export system for clean dependency boundaries
 - **Isolated Containers** - Each module manages its own InversifyJS container
@@ -347,7 +337,7 @@ class UserService {
 
 @Injectable()
 class AuthService {
-  constructor(private userService: UserService) {}
+  constructor(private readonly userService: UserService) {}
 
   login(userId: string) {
     const user = this.userService.getUser(userId);
@@ -392,8 +382,8 @@ class RequestContext {
 @Injectable()
 class ApiService {
   constructor(
-    private logger: LoggerService,
-    private context: RequestContext
+    private readonly logger: LoggerService,
+    private readonly context: RequestContext
   ) {}
 
   async fetchData() {
@@ -434,8 +424,8 @@ class InternalCacheService {
 @Injectable()
 class UserRepository {
   constructor(
-    private db: DatabaseService,
-    private cache: InternalCacheService
+    private readonly db: DatabaseService,
+    private readonly cache: InternalCacheService
   ) {}
 
   findById(id: string) {
@@ -461,34 +451,6 @@ const userRepo = ApiModule.get(UserRepository);
 
 // ❌ Throws error - InternalCacheService not exported
 // const cache = ApiModule.get(InternalCacheService);
-```
-
-**Key Module Methods:**
-
-```ts
-const MyModule = ProviderModule.create({ id: 'MyModule' });
-
-// Resolution
-MyModule.get(ServiceClass); // Get provider instance
-MyModule.getMany(Service1, Service2); // Get multiple providers
-
-// Queries
-MyModule.hasProvider(ServiceClass); // Check if provider exists
-MyModule.isImportingModule('ModuleId'); // Check if importing module
-MyModule.isExportingProvider(ServiceClass); // Check if exporting provider
-MyModule.isExportingModule('ModuleId'); // Check if exporting module
-
-// Dynamic updates
-MyModule.update.addProvider(NewService); // Add provider
-MyModule.update.addImport(OtherModule); // Add import
-MyModule.update.removeProvider(ServiceClass); // Remove provider
-MyModule.update.removeImport(OtherModule); // Remove import
-MyModule.update.removeFromExports(Service); // Remove from exports
-
-// Lifecycle
-await MyModule.reset(); // Reset module state
-await MyModule.dispose(); // Clean up and dispose
-MyModule.isDisposed; // Check disposal state
 ```
 
 ### Blueprints
@@ -543,239 +505,14 @@ const ConfigModuleMock = ConfigModuleBp.clone().updateDefinition({
 
 ### AppModule
 
-The `AppModule` is a special global root module that's automatically available throughout your application. Global modules are auto-imported into `AppModule`.
-
-```ts
-import { AppModule, ProviderModule } from '@adimm/x-injection';
-
-@Injectable()
-class LoggerService {
-  log(message: string) {
-    console.log(message);
-  }
-}
-
-// Add global providers to AppModule
-AppModule.update.addProvider(LoggerService);
-
-// Access from any module without explicit import
-const FeatureModule = ProviderModule.create({
-  id: 'FeatureModule',
-  // No need to import AppModule
-});
-
-const logger = FeatureModule.get(LoggerService);
-logger.log('Hello from FeatureModule!');
-```
-
-**Global Module Pattern:**
-
-```ts
-// Create a global module (auto-imports into AppModule)
-const LoggerModule = ProviderModule.create({
-  id: 'LoggerModule',
-  isGlobal: true,
-  providers: [LoggerService],
-  exports: [LoggerService],
-});
-
-// Now all modules have access to LoggerService
-const AnyModule = ProviderModule.create({
-  id: 'AnyModule',
-});
-
-const logger = AnyModule.get(LoggerService); // Works!
-```
+`AppModule` is the built-in global root container. Any module or blueprint created with `isGlobal: true` is automatically imported into it, making its exported providers available to every other module without an explicit `imports` declaration.
 
 > [!WARNING]
 >
-> - Cannot create a module with `id: 'AppModule'` - this is reserved
-> - Cannot import `AppModule` into other modules
-> - Use global modules sparingly to avoid implicit dependencies
-
-## OOP-Style Modules with ProviderModuleClass
-
-For developers who prefer class-based architecture, xInjection provides `ProviderModuleClass` - a composition-based wrapper that prevents naming conflicts between your custom methods and the DI container methods.
-
-### Basic OOP Module
-
-```ts
-import { Injectable, ProviderModuleClass } from '@adimm/x-injection';
-
-@Injectable()
-class UserService {
-  get(id: string) {
-    return { id, name: 'John Doe' };
-  }
-}
-
-@Injectable()
-class AuthService {
-  constructor(private userService: UserService) {}
-
-  login(userId: string) {
-    const user = this.userService.get(userId);
-    return `Logged in as ${user.name}`;
-  }
-}
-
-// OOP-style module extending ProviderModuleClass
-class AuthModule extends ProviderModuleClass {
-  constructor() {
-    super({
-      id: 'AuthModule',
-      providers: [UserService, AuthService],
-      exports: [AuthService],
-    });
-  }
-
-  // Custom business logic methods
-  authenticateUser(userId: string): string {
-    const authService = this.module.get(AuthService);
-    return authService.login(userId);
-  }
-
-  getUserById(userId: string) {
-    const userService = this.module.get(UserService);
-    return userService.get(userId);
-  }
-
-  // Custom method named 'get' - no conflict!
-  get(): string {
-    return 'custom-get-value';
-  }
-}
-
-// Instantiate and use
-const authModule = new AuthModule();
-
-// Use custom methods
-console.log(authModule.authenticateUser('123')); // "Logged in as John Doe"
-console.log(authModule.get()); // "custom-get-value"
-
-// Access DI container through .module property
-const authService = authModule.module.get(AuthService);
-authModule.module.update.addProvider(NewService);
-```
-
-> [!IMPORTANT]
-> All `ProviderModule` methods are available through the `.module` property to prevent naming conflicts with your custom methods.
-
-### Advanced OOP Patterns
-
-**Module with Initialization Logic:**
-
-```ts
-@Injectable()
-class DatabaseService {
-  private connected = false;
-
-  async connect(): Promise<void> {
-    // Connection logic
-    this.connected = true;
-  }
-
-  isConnected(): boolean {
-    return this.connected;
-  }
-}
-
-class DatabaseModule extends ProviderModuleClass {
-  private isModuleConnected = false;
-
-  constructor() {
-    super({
-      id: 'DatabaseModule',
-      providers: [DatabaseService],
-      exports: [DatabaseService],
-      onReady: async (module) => {
-        console.log('DatabaseModule ready!');
-      },
-    });
-  }
-
-  async connect(): Promise<void> {
-    const dbService = this.module.get(DatabaseService);
-    await dbService.connect();
-    this.isModuleConnected = true;
-  }
-
-  getConnectionStatus(): boolean {
-    return this.isModuleConnected;
-  }
-}
-
-const dbModule = new DatabaseModule();
-await dbModule.connect();
-console.log(dbModule.getConnectionStatus()); // true
-```
-
-**Module with Computed Properties:**
-
-```ts
-@Injectable()
-class ApiService {
-  makeRequest() {
-    return 'response';
-  }
-}
-
-@Injectable()
-class HttpClient {
-  get(url: string) {
-    return `GET ${url}`;
-  }
-}
-
-class ApiModule extends ProviderModuleClass {
-  constructor() {
-    super({
-      id: 'ApiModule',
-      providers: [ApiService, HttpClient],
-      exports: [ApiService],
-    });
-  }
-
-  // Computed properties - lazy evaluation
-  get apiService(): ApiService {
-    return this.module.get(ApiService);
-  }
-
-  get httpClient(): HttpClient {
-    return this.module.get(HttpClient);
-  }
-
-  // Business logic using multiple services
-  async makeAuthenticatedRequest(url: string, token: string) {
-    const client = this.httpClient;
-    return client.get(url) + ` with token ${token}`;
-  }
-}
-
-const apiModule = new ApiModule();
-const response = await apiModule.makeAuthenticatedRequest('/users', 'token123');
-```
-
-### When to Use OOP vs Functional
-
-**Use OOP-style (`extends ProviderModuleClass`) when:**
-
-- You need custom business logic methods on the module itself
-- You prefer class-based architecture and inheritance patterns
-- You want computed properties or getters for providers
-- You need initialization logic or state management in the module
-- You're building a complex module with multiple related operations
-- You want to prevent naming conflicts (e.g., custom `get()` method)
-
-**Use Functional-style (`ProviderModule.create()`) when:**
-
-- You only need dependency injection without custom logic
-- You prefer functional composition and simplicity
-- You want more concise code
-- You're creating straightforward provider containers
-- You don't need module-level state or behavior
-
-**Key Point:** Both styles are fully compatible and can be mixed within the same application. `ProviderModuleClass` uses composition (contains a `ProviderModule` as `this.module`), providing identical DI functionality while preventing method name conflicts.
+> - `id: 'AppModule'` is reserved — you cannot create your own module with that name
+> - You cannot import `AppModule` into other modules
+>
+> See [Global Modules](#global-modules) for full usage and best practices.
 
 ## Provider Tokens
 
@@ -908,58 +645,6 @@ const DatabaseModule = ProviderModule.create({
 
 const connection = DatabaseModule.get<DatabaseConnection>('DATABASE_CONNECTION');
 console.log(connection.url); // 'postgres://localhost:5432/mydb'
-```
-
-**Complex Factory Example with Multiple Dependencies:**
-
-```ts
-@Injectable()
-class LoggerService {
-  log(message: string) {
-    console.log(message);
-  }
-}
-
-@Injectable()
-class MetricsService {
-  track(event: string) {
-    console.log(`Tracking: ${event}`);
-  }
-}
-
-interface ApiClient {
-  logger: LoggerService;
-  metrics: MetricsService;
-  baseUrl: string;
-  makeRequest(endpoint: string): void;
-}
-
-const ApiModule = ProviderModule.create({
-  id: 'ApiModule',
-  providers: [
-    LoggerService,
-    MetricsService,
-    { provide: 'BASE_URL', useValue: 'https://api.example.com' },
-    {
-      provide: 'API_CLIENT',
-      useFactory: (logger: LoggerService, metrics: MetricsService, baseUrl: string): ApiClient => {
-        return {
-          logger,
-          metrics,
-          baseUrl,
-          makeRequest(endpoint: string) {
-            this.logger.log(`Making request to ${this.baseUrl}${endpoint}`);
-            this.metrics.track('api_request');
-          },
-        };
-      },
-      inject: [LoggerService, MetricsService, 'BASE_URL'],
-    },
-  ],
-});
-
-const apiClient = ApiModule.get<ApiClient>('API_CLIENT');
-apiClient.makeRequest('/users');
 ```
 
 > [!TIP]
@@ -1107,43 +792,6 @@ const MyModule = ProviderModule.create({
 const s1 = MyModule.get(MyService);
 const s2 = MyModule.get(MyService);
 console.log(s1 === s2); // false
-```
-
-**Examples of Each Priority:**
-
-```ts
-// Priority 1: Token scope
-const Module1 = ProviderModule.create({
-  id: 'Module1',
-  defaultScope: InjectionScope.Singleton,
-  providers: [
-    {
-      provide: MyService,
-      useClass: MyService,
-      scope: InjectionScope.Transient, // Token wins
-    },
-  ],
-});
-
-// Priority 2: Decorator scope (no token scope)
-@Injectable(InjectionScope.Request)
-class DecoratedService {}
-
-const Module2 = ProviderModule.create({
-  id: 'Module2',
-  defaultScope: InjectionScope.Singleton,
-  providers: [DecoratedService], // Decorator wins
-});
-
-// Priority 3: Module default (no token or decorator scope)
-@Injectable() // No scope specified
-class PlainService {}
-
-const Module3 = ProviderModule.create({
-  id: 'Module3',
-  defaultScope: InjectionScope.Transient, // Module default wins
-  providers: [PlainService],
-});
 ```
 
 > [!IMPORTANT]
@@ -1340,7 +988,7 @@ console.log(ModuleB.hasProvider(ServiceC)); // true
 
 ### Global Modules
 
-Mark modules as global to auto-import into `AppModule`, making them available everywhere.
+Declare a single `AppBootstrapModule` blueprint with `isGlobal: true` at your app's entry point. It is automatically imported into `AppModule`, making its exported providers available to every module without any explicit `imports`.
 
 ```ts
 @Injectable()
@@ -1350,56 +998,29 @@ class LoggerService {
   }
 }
 
-// Create global module
-const LoggerModule = ProviderModule.create({
-  id: 'LoggerModule',
-  isGlobal: true, // Auto-imports into AppModule
-  providers: [LoggerService],
-  exports: [LoggerService],
-});
-
-// Now any module can access LoggerService without explicit import
-const FeatureModule = ProviderModule.create({
-  id: 'FeatureModule',
-  // No imports needed!
-});
-
-const logger = FeatureModule.get(LoggerService); // Works!
-logger.log('Hello from FeatureModule');
-```
-
-**Global Module with Blueprint:**
-
-```ts
 @Injectable()
 class ConfigService {
   apiUrl = 'https://api.example.com';
 }
 
-// Blueprint with global flag
-const ConfigModuleBp = ProviderModule.blueprint({
-  id: 'ConfigModule',
+// Declare once at app entry point
+ProviderModule.blueprint({
+  id: 'AppBootstrapModule',
   isGlobal: true,
-  providers: [ConfigService],
-  exports: [ConfigService],
+  providers: [LoggerService, ConfigService],
+  exports: [LoggerService, ConfigService],
 });
 
-// Automatically imports into AppModule
-console.log(AppModule.isImportingModule('ConfigModule')); // true
-console.log(AppModule.hasProvider(ConfigService)); // true
+// Automatically imported into AppModule
+console.log(AppModule.isImportingModule('AppBootstrapModule')); // true
 
-// Available in all modules
-const AnyModule = ProviderModule.create({ id: 'AnyModule' });
-const config = AnyModule.get(ConfigService); // Works!
+// Every module can resolve these without importing anything
+const FeatureModule = ProviderModule.create({ id: 'FeatureModule' });
+const logger = FeatureModule.get(LoggerService); // Works!
 ```
 
 > [!CAUTION]
-> Use global modules sparingly:
->
-> - They create implicit dependencies that can make code harder to understand
-> - They reduce encapsulation and explicit dependency graphs
-> - Best used for true cross-cutting concerns (logging, configuration, telemetry)
-> - Prefer explicit imports when possible for better maintainability
+> Even if not enforced, it is recommended to keep `isGlobal: true` to a **single** `AppBootstrapModule`. Multiple global modules create hidden implicit dependencies that are hard to trace. If a module is not truly app-wide, import it explicitly instead.
 
 ## Dependency Injection
 
@@ -1426,8 +1047,8 @@ class LoggerService {
 class UserRepository {
   // Dependencies automatically injected via constructor
   constructor(
-    private db: DatabaseService,
-    private logger: LoggerService
+    private readonly db: DatabaseService,
+    private readonly logger: LoggerService
   ) {}
 
   findAll() {
@@ -1455,9 +1076,9 @@ import { Inject, Injectable } from '@adimm/x-injection';
 @Injectable()
 class ApiService {
   constructor(
-    @Inject('API_KEY') private apiKey: string,
-    @Inject('API_URL') private apiUrl: string,
-    @Inject('MAX_RETRIES') private maxRetries: number
+    @Inject('API_KEY') private readonly apiKey: string,
+    @Inject('API_URL') private readonly apiUrl: string,
+    @Inject('MAX_RETRIES') private readonly maxRetries: number
   ) {}
 
   makeRequest() {
@@ -1497,7 +1118,7 @@ class StripePaymentGateway extends PaymentGateway {
 
 @Injectable()
 class PaymentService {
-  constructor(@Inject(PaymentGateway) private gateway: PaymentGateway) {}
+  constructor(@Inject(PaymentGateway) private readonly gateway: PaymentGateway) {}
 
   async processPayment(amount: number) {
     await this.gateway.charge(amount);
@@ -1544,7 +1165,7 @@ abstract class Notifier {
 
 @Injectable()
 class NotificationService {
-  constructor(@MultiInject(Notifier) private notifiers: Notifier[]) {}
+  constructor(@MultiInject(Notifier) private readonly notifiers: Notifier[]) {}
 
   notifyAll() {
     this.notifiers.forEach((notifier) => notifier.notify());
@@ -1582,7 +1203,7 @@ const MyModule = ProviderModule.create({
 });
 
 // Get all providers bound to 'Handler'
-const handlers = MyModule.get('Handler', false, true); // Third param = asList
+const handlers = MyModule.get('Handler', false, true); // (token, isOptional=false, asList=true)
 console.log(handlers); // ['Handler1', 'Handler2', 'Handler3']
 ```
 
@@ -1600,7 +1221,7 @@ class ServiceA {
 class ServiceB {
   constructor(
     private serviceA: ServiceA,
-    @Inject('OPTIONAL_CONFIG') private config?: any
+    @Inject('OPTIONAL_CONFIG') private readonly config?: any
   ) {}
 }
 
@@ -1772,70 +1393,6 @@ try {
 }
 ```
 
-**Complete Lifecycle Example:**
-
-```ts
-@Injectable()
-class ResourceService {
-  initialized = false;
-
-  async initialize() {
-    console.log('Initializing resource...');
-    this.initialized = true;
-  }
-
-  async cleanup() {
-    console.log('Cleaning up resource...');
-    this.initialized = false;
-  }
-}
-
-const ResourceModule = ProviderModule.create({
-  id: 'ResourceModule',
-  providers: [ResourceService],
-
-  onReady: async (module) => {
-    console.log('[READY] Module created');
-    const service = module.get(ResourceService);
-    await service.initialize();
-  },
-
-  onReset: () => {
-    console.log('[RESET] Resetting module');
-    return {
-      before: async (mod) => {
-        console.log('[RESET:BEFORE] Cleaning up before reset');
-        const service = mod.get(ResourceService);
-        await service.cleanup();
-      },
-      after: async () => {
-        console.log('[RESET:AFTER] Reinitializing after reset');
-        const service = mod.get(ResourceService);
-        await service.initialize();
-      },
-    };
-  },
-
-  onDispose: () => {
-    console.log('[DISPOSE] Disposing module');
-    return {
-      before: async (mod) => {
-        console.log('[DISPOSE:BEFORE] Final cleanup');
-        const service = mod.get(ResourceService);
-        await service.cleanup();
-      },
-      after: async () => {
-        console.log('[DISPOSE:AFTER] Module fully disposed');
-      },
-    };
-  },
-});
-
-// Usage
-await ResourceModule.reset();
-await ResourceModule.dispose();
-```
-
 > [!IMPORTANT]
 > Lifecycle hook execution order:
 >
@@ -1924,6 +1481,17 @@ const db = MonitoredModule.get(DatabaseService);
 **Tracking Module Composition:**
 
 ```ts
+@Injectable()
+class ServiceA {}
+@Injectable()
+class ServiceB {}
+
+const DatabaseModule = ProviderModule.create({
+  id: 'DatabaseModule',
+  providers: [ServiceA],
+  exports: [ServiceA],
+});
+
 const RootModule = ProviderModule.create({
   id: 'RootModule',
 });
@@ -1979,53 +1547,6 @@ DebugModule.update.subscribe(({ type, change }) => {
 
 DebugModule.update.addProvider(ServiceA);
 DebugModule.update.removeProvider(ServiceA);
-```
-
-**Building a Module Activity Logger:**
-
-```ts
-class ModuleActivityLogger {
-  private events: Array<{ timestamp: number; type: string; change: any }> = [];
-
-  constructor(module: ProviderModule) {
-    module.update.subscribe(({ type, change }) => {
-      this.events.push({
-        timestamp: Date.now(),
-        type: DefinitionEventType[type],
-        change,
-      });
-    });
-  }
-
-  getReport() {
-    return {
-      totalEvents: this.events.length,
-      events: this.events,
-      summary: this.events.reduce(
-        (acc, event) => {
-          acc[event.type] = (acc[event.type] || 0) + 1;
-          return acc;
-        },
-        {} as Record<string, number>
-      ),
-    };
-  }
-}
-
-const TrackedModule = ProviderModule.create({ id: 'TrackedModule' });
-const logger = new ModuleActivityLogger(TrackedModule);
-
-TrackedModule.update.addProvider(ServiceA);
-TrackedModule.update.addProvider(ServiceB);
-TrackedModule.get(ServiceA);
-TrackedModule.get(ServiceB);
-
-console.log(logger.getReport());
-// {
-//   totalEvents: 4,
-//   events: [...],
-//   summary: { Provider: 2, GetProvider: 2 }
-// }
 ```
 
 > [!WARNING]
@@ -2587,11 +2108,75 @@ const featureService = FeatureModuleTest.get(FeatureService);
 > Testing strategies:
 >
 > - Use `blueprint.clone()` to create test variations without modifying originals
-> - Use `useValue` for simple mocks with jest.fn()
+> - Use `useValue` for simple mocks
 > - Use `useClass` for class-based mocks with behavior
 > - Use `useFactory` for complex mock setup
 > - Test module isolation by mocking all external dependencies
-> - Verify mock calls with jest expectations
+> - Verify mock calls with your test framework
+
+## OOP-Style Modules with ProviderModuleClass
+
+For developers who prefer class-based architecture, xInjection provides `ProviderModuleClass` — a composition-based wrapper that prevents naming conflicts between your custom methods and the DI container methods.
+
+### Basic OOP Module
+
+```ts
+import { Injectable, ProviderModuleClass } from '@adimm/x-injection';
+
+@Injectable()
+class UserService {
+  get(id: string) {
+    return { id, name: 'John Doe' };
+  }
+}
+
+@Injectable()
+class AuthService {
+  constructor(private readonly userService: UserService) {}
+
+  login(userId: string) {
+    const user = this.userService.get(userId);
+    return `Logged in as ${user.name}`;
+  }
+}
+
+class AuthModule extends ProviderModuleClass {
+  constructor() {
+    super({
+      id: 'AuthModule',
+      providers: [UserService, AuthService],
+      exports: [AuthService],
+    });
+  }
+
+  authenticateUser(userId: string): string {
+    return this.module.get(AuthService).login(userId);
+  }
+
+  // Custom method named 'get' - no conflict with module.get()!
+  get(): string {
+    return 'custom-get-value';
+  }
+}
+
+const authModule = new AuthModule();
+console.log(authModule.authenticateUser('123')); // "Logged in as John Doe"
+console.log(authModule.get()); // "custom-get-value"
+
+// DI container always accessible via .module
+authModule.module.update.addProvider(NewService);
+```
+
+> [!IMPORTANT]
+> All `ProviderModule` methods are available through the `.module` property to prevent naming conflicts with your custom methods.
+
+### When to Use OOP vs Functional
+
+**OOP-style (`extends ProviderModuleClass`):** when you need custom business logic methods, computed getters, initialization state, or want to prevent naming conflicts with the DI API.
+
+**Functional-style (`ProviderModule.create()`):** when you only need a provider container with no extra behavior — simpler and more concise.
+
+Both styles are fully compatible and can be mixed in the same application.
 
 ## Advanced Module API
 
@@ -2646,74 +2231,6 @@ const AppModule = ProviderModule.create({
 
 // Query using Symbol
 console.log(AppModule.isImportingModule(MODULE_ID)); // true
-```
-
-### Multiple Provider Binding
-
-Bind multiple providers to the same token and retrieve them as a list.
-
-```ts
-@Injectable()
-abstract class Plugin {
-  abstract execute(): void;
-}
-
-@Injectable()
-class PluginA extends Plugin {
-  execute() {
-    console.log('Plugin A executing');
-  }
-}
-
-@Injectable()
-class PluginB extends Plugin {
-  execute() {
-    console.log('Plugin B executing');
-  }
-}
-
-@Injectable()
-class PluginC extends Plugin {
-  execute() {
-    console.log('Plugin C executing');
-  }
-}
-
-const PluginModule = ProviderModule.create({
-  id: 'PluginModule',
-  providers: [
-    { provide: Plugin, useClass: PluginA },
-    { provide: Plugin, useClass: PluginB },
-    { provide: Plugin, useClass: PluginC },
-  ],
-});
-
-// Get all plugins as array (third parameter = asList)
-const plugins = PluginModule.get(Plugin, false, true);
-console.log(plugins.length); // 3
-
-// Execute all plugins
-plugins.forEach((plugin) => plugin.execute());
-// Output:
-// Plugin A executing
-// Plugin B executing
-// Plugin C executing
-```
-
-**String Token Example:**
-
-```ts
-const MyModule = ProviderModule.create({
-  id: 'MyModule',
-  providers: [
-    { provide: 'Handler', useValue: 'Handler1' },
-    { provide: 'Handler', useValue: 'Handler2' },
-    { provide: 'Handler', useValue: 'Handler3' },
-  ],
-});
-
-const handlers = MyModule.get('Handler', false, true);
-console.log(handlers); // ['Handler1', 'Handler2', 'Handler3']
 ```
 
 ### Batch Resolution with getMany()
@@ -2807,6 +2324,84 @@ const [database, cache, optionalLogger, allPlugins, config] = MyModule.getMany(
 >
 > - **Simple**: Just pass the token directly
 > - **With options**: Use object with `provider`, `isOptional`, and/or `asList`
+
+## Hierarchical Dependency Injection
+
+When a module resolves a provider via `module.get()`, xInjection walks up a well-defined lookup chain until it finds a binding or throws.
+
+**Resolution order (highest to lowest priority):**
+
+1. **Own container** — providers declared directly in this module
+2. **Imported modules** — exported providers from each module in the `imports` array (in order)
+3. **AppModule** — globally available providers (from `isGlobal: true` modules)
+
+```
+module.get(SomeService)
+       │
+       ▼
+┌──────────────────────┐
+│   Own container      │  ← providers: [SomeService, ...]
+│   (highest priority) │
+└──────────┬───────────┘
+           │ not found
+           ▼
+┌──────────────────────┐
+│  Imported modules    │  ← imports: [DatabaseModule, ConfigModule]
+│  (exported only)     │     DatabaseModule.exports: [DatabaseService]
+└──────────┬───────────┘     ConfigModule.exports:   [ConfigService]
+           │ not found
+           ▼
+┌──────────────────────┐
+│     AppModule        │  ← AppBootstrapModule { isGlobal: true }
+│  (lowest priority)   │     exports: [LoggerService, ...]
+└──────────┬───────────┘
+           │ not found
+           ▼
+  InjectionProviderModuleMissingProviderError
+```
+
+Here is the same lookup chain rendered as a graph:
+
+```mermaid
+flowchart TD
+    A["module.get(SomeService)"] --> B
+
+    subgraph own["① Own container"]
+        B{{"Bound here?"}}
+    end
+
+    B -- Yes --> Z(["✅ Return instance"])
+    B -- No --> C
+
+    subgraph imports["② Imported modules (exported providers only)"]
+        C{{"Exported by<br/>DatabaseModule?"}}
+        C -- No --> D{{"Exported by<br/>ConfigModule?"}}
+    end
+
+    C -- Yes --> Z
+    D -- Yes --> Z
+    D -- No --> E
+
+    subgraph global["③ AppModule (via AppBootstrapModule)"]
+        E{{"Bound in<br/>AppModule?"}}
+    end
+
+    E -- Yes --> Z
+    E -- No --> F(["❌ MissingProviderError"])
+```
+
+**Resolution in practice** — given the modules set up in [Import/Export Pattern](#importexport-pattern) and [Global Modules](#global-modules):
+
+```ts
+ApiModule.get(ApiService); // ✅ ① own container
+ApiModule.get(ConfigService); // ✅ ② ConfigModule export
+ApiModule.get(DatabaseService); // ✅ ② DatabaseModule export
+ApiModule.get(LoggerService); // ✅ ③ AppModule (via AppBootstrapModule)
+ApiModule.get(InternalCache); // ❌ not exported → MissingProviderError
+```
+
+> [!TIP]
+> A provider that isn't in a module's `exports` is completely invisible to any importer — it's a private implementation detail. Think of `exports` as the public API of a module.
 
 ## Resources
 

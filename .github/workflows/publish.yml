@@ -4,14 +4,25 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Run the publish job'
+        type: boolean
+        default: true
+      release:
+        description: 'Run the release job'
+        type: boolean
+        default: false
 
 jobs:
   release:
+    if: github.event_name != 'workflow_dispatch' || inputs.release
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - uses: Bullrich/generate-release-changelog@master
@@ -23,20 +34,17 @@ jobs:
           body: ${{ steps.Changelog.outputs.changelog }}
 
   publish:
+    if: github.event_name != 'workflow_dispatch' || inputs.publish
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
-      - name: Upgrade npm for OIDC
-        run: npm install -g npm@latest
       - run: npm ci
-      - run: npm run build
-      # https://github.com/orgs/community/discussions/176761
-      # https://github.com/actions/setup-node/issues/1440#issuecomment-3571890875
-      - run: NODE_AUTH_TOKEN="" npm publish --access public
+      - run: npm run build --if-present
+      - run: npm publish
